@@ -1,19 +1,33 @@
 from fastapi import FastAPI, Request, Depends
-from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
+
 from app.core.database import init_db, close_db
+from app.api.v1.routes import router
+from app.core.logging_config import setup_logger
+
+
+logger = setup_logger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await init_db()
-    yield
-    await close_db()
+    """Управление жизненным циклом приложения"""
+    logger.info("Starting app")
+    try:
+        await init_db()
+        yield
+    except Exception as e:
+        logger.error(f"Error in lifespan: {e}")
+    finally:
+        logger.info("Stopping app")
+        await close_db()
 
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(
+    title="Wallet Service API",
+    description="API для работы с кошельками",
+    version="1.0.0",
+    lifespan=lifespan
+)
 
-
-@app.get("/")
-async def root(request: Request):
-    return JSONResponse(content={"message": "Hello World!"})
+app.include_router(router)

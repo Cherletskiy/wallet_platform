@@ -12,8 +12,8 @@ class Base(DeclarativeBase, AsyncAttrs):
 
 
 class OperationType(enum.Enum):
-    DEPOSIT = "deposit"
-    WITHDRAWAL = "withdrawal"
+    DEPOSIT = "DEPOSIT"
+    WITHDRAWAL = "WITHDRAWAL"
 
 
 class Wallet(Base):
