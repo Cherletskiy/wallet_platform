@@ -59,6 +59,9 @@ class WalletService:
         Returns:
             float: Баланс в рублях
         """
+        if amount_cent <= 0:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Amount must be greater than 0")
+
         wallet = await self.wallet_repository.get_wallet_by_id(session, wallet_id)
         if wallet is None:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Wallet not found")
