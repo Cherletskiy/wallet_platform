@@ -1,5 +1,5 @@
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
-from app.models.wallet import Base
 from app.core.logging_config import setup_logger
 from app.core.config import settings
 
@@ -26,8 +26,8 @@ async def init_db():
     logger.info("Initializing database")
     try:
         async with engine.begin() as conn:
-            await conn.run_sync(Base.metadata.create_all)
-            logger.info("Database initialized")
+            await conn.run_sync(lambda conn: conn.execute(text("SELECT 1")))
+            logger.info("Database connection OK")
     except Exception as e:
         logger.error(f"Error initializing database: {e}")
 

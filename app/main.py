@@ -1,7 +1,8 @@
-from fastapi import FastAPI, Request, Depends
+from fastapi import FastAPI
 from contextlib import asynccontextmanager
 
 from app.core.database import init_db, close_db
+from app.core.migrations import run_migrations
 from app.api.v1.routes import router
 from app.core.logging_config import setup_logger
 
@@ -14,6 +15,7 @@ async def lifespan(app: FastAPI):
     """Управление жизненным циклом приложения"""
     logger.info("Starting app")
     try:
+        await run_migrations()
         await init_db()
         yield
     except Exception as e:
