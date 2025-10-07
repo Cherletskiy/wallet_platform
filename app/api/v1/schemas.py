@@ -1,3 +1,4 @@
+from decimal import Decimal
 from pydantic import BaseModel, Field
 from app.models.wallet import OperationType
 
@@ -7,5 +8,5 @@ class WalletBalanceResponse(BaseModel):
 
 
 class WalletOperationRequest(BaseModel):
-    amount: float = Field(gt=0)
+    amount: Decimal = Field(gt=0, decimal_places=2)
     operation_type: OperationType

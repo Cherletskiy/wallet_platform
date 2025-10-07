@@ -29,7 +29,10 @@ async def wallet_operation(
         session: AsyncSession = Depends(get_async_session),
         wallet_service: WalletService = Depends(get_wallet_service)
 ):
-    balance_rub = await wallet_service.update_wallet_balance_cent(session, wallet_id,
-                                                                  int(request.amount * 100),
-                                                                  request.operation_type)
+    balance_rub = await wallet_service.update_wallet_balance_cent(
+        session,
+        wallet_id,
+        int((request.amount * 100).to_integral_value()),
+        request.operation_type
+    )
     return WalletBalanceResponse(balance_rub=balance_rub)

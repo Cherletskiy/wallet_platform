@@ -103,6 +103,18 @@ def test_wallet_operation_invalid_amount(client, mock_wallet_repository):
     assert response.json()["detail"][0]["type"] == "greater_than"
 
 
+def test_wallet_operation_invalid_amount_decimal_places(client, mock_wallet_repository):
+    """Тест валидации отрицательного amount."""
+    wallet_id = uuid.uuid4()
+    response = client.post(
+        f"{base_url}/{wallet_id}/operation",
+        json={"amount": 10.123, "operation_type": "DEPOSIT"}
+    )
+
+    assert response.status_code == 422
+    assert response.json()["detail"][0]["type"] == "decimal_max_places"
+
+
 def test_wallet_operation_invalid_operation_type(client, mock_wallet_repository):
     """Тест валидации неверного operation_type."""
     wallet_id = uuid.uuid4()
