@@ -10,7 +10,7 @@ from app.api.v1.schemas import WalletBalanceResponse, WalletOperationRequest
 router = APIRouter(prefix="/api/v1", tags=["Wallet"])
 
 
-@router.get("/wallet/{wallet_id}", response_model=WalletBalanceResponse,
+@router.get("/wallets/{wallet_id}", response_model=WalletBalanceResponse,
             summary="Получение баланса в рублях по UUID")
 async def get_wallet(
         wallet_id: uuid.UUID,
@@ -21,7 +21,7 @@ async def get_wallet(
     return WalletBalanceResponse(balance_rub=balance_rub)
 
 
-@router.post("/wallet/{wallet_id}/operation", response_model=WalletBalanceResponse,
+@router.post("/wallets/{wallet_id}/operation", response_model=WalletBalanceResponse,
              summary="Операция DEPOSIT/WITHDRAWAL с балансом. Возврат баланса в рублях в случае успеха")
 async def wallet_operation(
         wallet_id: uuid.UUID,
