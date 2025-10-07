@@ -6,7 +6,7 @@ load_dotenv()
 
 
 class Settings:
-    DB_HOST: str = os.getenv("DB_HOST", "localhost")
+    DB_HOST: str = os.getenv("DB_HOST", "db")
     DB_PORT: str = os.getenv("DB_PORT", "5432")
     DB_NAME: str = os.getenv("DB_NAME", "wallet_db")
     DB_USER: str = os.getenv("DB_USER", "postgres")

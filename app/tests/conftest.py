@@ -1,14 +1,26 @@
 import uuid
-
 import pytest
+from dotenv import load_dotenv
+import os
+
 from fastapi.testclient import TestClient
+from unittest.mock import MagicMock
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+
 from app.main import app
 from app.core.dependencies import get_wallet_repository
 from app.models.wallet import Wallet
 from app.repositories.wallet_repository import WalletRepository
 from app.services.wallet_service import WalletService
-from unittest.mock import MagicMock
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+
+
+load_dotenv()
+
+TEST_DB_NAME = os.getenv("TEST_DB_NAME", "test_wallet_db")
+TEST_DB_USER = os.getenv("TEST_DB_USER", "postgres")
+TEST_DB_PWD = os.getenv("TEST_DB_PWD", "postgres")
+TEST_DB_HOST = os.getenv("TEST_DB_HOST", "db")
+TEST_DB_PORT = os.getenv("TEST_DB_PORT", 5432)
 
 
 @pytest.fixture
@@ -41,7 +53,7 @@ def override_dependencies(mock_wallet_repository):
 @pytest.fixture(scope="function")
 async def test_db():
     """Фикстура для тестовой базы данных."""
-    test_dsn = "postgresql+asyncpg://postgres:postgres@localhost:5433/test_wallet_db"
+    test_dsn = f"postgresql+asyncpg://{TEST_DB_USER}:{TEST_DB_PWD}@{TEST_DB_HOST}:{TEST_DB_PORT}/{TEST_DB_NAME}"
     engine = create_async_engine(
         url=test_dsn,
         echo=False,
