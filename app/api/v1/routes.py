@@ -1,13 +1,13 @@
 import uuid
 
-from fastapi import APIRouter, Depends
+from dishka.integrations.fastapi import DishkaRoute, FromDishka
+from fastapi import APIRouter
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.schemas import WalletBalanceResponse, WalletOperationRequest
-from app.core.dependencies import get_async_session, get_wallet_service
 from app.services.wallet_service import WalletService
 
-router = APIRouter(prefix="/api/v1", tags=["Wallet"])
+router = APIRouter(prefix="/api/v1", tags=["Wallet"], route_class=DishkaRoute)
 
 
 @router.get(
@@ -17,8 +17,8 @@ router = APIRouter(prefix="/api/v1", tags=["Wallet"])
 )
 async def get_wallet(
     wallet_id: uuid.UUID,
-    session: AsyncSession = Depends(get_async_session),
-    wallet_service: WalletService = Depends(get_wallet_service),
+    session: FromDishka[AsyncSession],
+    wallet_service: FromDishka[WalletService],
 ) -> WalletBalanceResponse:
     balance_rub = await wallet_service.get_wallet_balance_rub(session, wallet_id)
     return WalletBalanceResponse(balance_rub=balance_rub)
@@ -33,8 +33,8 @@ async def get_wallet(
 async def wallet_operation(
     wallet_id: uuid.UUID,
     request: WalletOperationRequest,
-    session: AsyncSession = Depends(get_async_session),
-    wallet_service: WalletService = Depends(get_wallet_service),
+    session: FromDishka[AsyncSession],
+    wallet_service: FromDishka[WalletService],
 ) -> WalletBalanceResponse:
     balance_rub = await wallet_service.update_wallet_balance_cent(
         session,

@@ -1,34 +1,73 @@
+import asyncio
 import os
 import uuid
-from collections.abc import AsyncIterator
+from collections.abc import AsyncIterator, Iterator
 from contextlib import asynccontextmanager
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+import pytest_asyncio
+from dishka import Provider, Scope, from_context, make_async_container, provide
 from dotenv import load_dotenv
 from fastapi.testclient import TestClient
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
+from testcontainers.postgres import PostgresContainer
 
-from app.core.dependencies import get_async_session, get_wallet_repository
-from app.main import app
+from app.main import create_app
 from app.models.wallet import Wallet
 from app.repositories.wallet_repository import WalletRepository
 from app.services.wallet_service import WalletService
 
 load_dotenv()
 
-TEST_DB_NAME = os.getenv("TEST_DB_NAME", "test_wallet_db")
-TEST_DB_USER = os.getenv("TEST_DB_USER", "postgres")
-TEST_DB_PWD = os.getenv("TEST_DB_PWD", "postgres")
-TEST_DB_HOST = os.getenv("TEST_DB_HOST", "db")
-TEST_DB_PORT = os.getenv("TEST_DB_PORT", 5432)
+POSTGRES_IMAGE = "postgres:15.17-trixie"
+
+
+class TestProvider(Provider):
+    session = from_context(provides=AsyncSession, scope=Scope.REQUEST)
+    wallet_repository = from_context(
+        provides=WalletRepository,
+        scope=Scope.REQUEST,
+    )
+    wallet_service = provide(WalletService, scope=Scope.REQUEST)
+
+
+def build_asyncpg_dsn(container: PostgresContainer) -> str:
+    return (
+        "postgresql+asyncpg://"
+        f"{container.username}:{container.password}@"
+        f"{container.get_container_host_ip()}:{container.get_exposed_port(5432)}/"
+        f"{container.dbname}"
+    )
 
 
 @pytest.fixture
-def client(monkeypatch):
-    monkeypatch.setattr("app.main.run_migrations", AsyncMock())
-    monkeypatch.setattr("app.main.init_db", AsyncMock())
-    monkeypatch.setattr("app.main.close_db", AsyncMock())
+def mock_wallet_repository() -> MagicMock:
+    return MagicMock(spec=WalletRepository)
+
+
+@pytest.fixture
+def wallet_service(mock_wallet_repository: MagicMock) -> WalletService:
+    return WalletService(wallet_repository=mock_wallet_repository)
+
+
+@pytest.fixture
+def client(mock_wallet_repository: MagicMock) -> Iterator[TestClient]:
+    request_session = AsyncMock(spec=AsyncSession)
+    container = make_async_container(
+        TestProvider(),
+        context={
+            AsyncSession: request_session,
+            WalletRepository: mock_wallet_repository,
+        },
+        start_scope=Scope.APP,
+    )
+    app = create_app(container=container)
 
     @asynccontextmanager
     async def test_lifespan(_: object) -> AsyncIterator[None]:
@@ -36,58 +75,58 @@ def client(monkeypatch):
 
     app.router.lifespan_context = test_lifespan
 
-    with TestClient(app) as c:
-        yield c
+    with TestClient(app) as test_client:
+        yield test_client
+
+    asyncio.run(container.close())
 
 
-@pytest.fixture
-def mock_wallet_repository():
-    """Фикстура для мокового репозитория."""
-    return MagicMock(spec=WalletRepository)
+@pytest.fixture(scope="session")
+def postgres_container() -> Iterator[PostgresContainer]:
+    with PostgresContainer(
+        POSTGRES_IMAGE,
+        username=os.getenv("DB_USER", "postgres"),
+        password=os.getenv("DB_PASSWORD") or os.getenv("DB_PWD", "postgres"),
+        dbname=os.getenv("DB_NAME", "postgres"),
+    ) as container:
+        yield container
 
 
-@pytest.fixture
-def wallet_service(mock_wallet_repository):
-    """Фикстура для сервиса с моковым репозиторием."""
-    return WalletService(wallet_repository=mock_wallet_repository)
+@pytest_asyncio.fixture(scope="session")
+async def engine(postgres_container: PostgresContainer) -> AsyncIterator[AsyncEngine]:
+    engine = create_async_engine(
+        url=build_asyncpg_dsn(postgres_container),
+        echo=False,
+        pool_size=5,
+        max_overflow=10,
+    )
+    yield engine
+    await engine.dispose()
 
 
-@pytest.fixture(autouse=True)
-def override_dependencies(mock_wallet_repository):
-    async def get_test_session() -> AsyncIterator[AsyncSession]:
-        yield AsyncMock(spec=AsyncSession)
-
-    app.dependency_overrides[get_wallet_repository] = lambda: mock_wallet_repository
-    app.dependency_overrides[get_async_session] = get_test_session
-    yield
-    app.dependency_overrides.clear()
-
-
-@pytest.fixture(scope="function")
-async def test_db():
-    """Фикстура для тестовой базы данных."""
-    test_dsn = f"postgresql+asyncpg://{TEST_DB_USER}:{TEST_DB_PWD}@{TEST_DB_HOST}:{TEST_DB_PORT}/{TEST_DB_NAME}"
-    engine = create_async_engine(url=test_dsn, echo=False, pool_size=5, max_overflow=10)
+@pytest_asyncio.fixture(scope="function")
+async def test_db(
+    engine: AsyncEngine,
+) -> AsyncIterator[async_sessionmaker[AsyncSession]]:
     from app.models.wallet import Base
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
-    async_session_factory = async_sessionmaker(engine, expire_on_commit=False)
-
-    yield async_session_factory
+    session_factory = async_sessionmaker(engine, expire_on_commit=False)
+    yield session_factory
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
-    await engine.dispose()
 
 
-@pytest.fixture
-async def wallet(test_db):
-    """Фикстура для создания тестового кошелька."""
+@pytest_asyncio.fixture
+async def wallet(
+    test_db: async_sessionmaker[AsyncSession],
+) -> uuid.UUID:
     wallet_id = uuid.uuid4()
     async with test_db() as session:
-        wallet = Wallet(id=wallet_id, balance_cent=10000)  # 100 рублей
+        wallet = Wallet(id=wallet_id, balance_cent=10000)
         session.add(wallet)
         await session.commit()
     return wallet_id

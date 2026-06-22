@@ -4,7 +4,7 @@
 
 Wallet API is a FastAPI service for wallet balance management backed by PostgreSQL. It supports deposit and withdrawal operations, handles concurrent updates with `SELECT FOR UPDATE`, stores money in cents for accuracy, and exposes balances in rubles through the API.
 
-This first upgrade step introduces a modern Python project setup with `uv`, `pyproject.toml`, `ruff`, and `mypy` while preserving the current application behavior.
+The project now uses `dishka` for dependency injection and `testcontainers` for integration tests, while keeping the public API behavior unchanged.
 
 ## Requirements
 
@@ -31,6 +31,7 @@ wallet_platform/
 │   │   ├── dependencies.py      # FastAPI dependencies
 │   │   ├── logging_config.py    # Logging configuration
 │   │   ├── migrations.py        # Alembic migration runner
+│   ├── ioc.py                   # Dishka dependency wiring
 │   ├── models/
 │   │   ├── __init__.py
 │   │   ├── wallet.py            # SQLAlchemy models (Wallet, Operation)
@@ -53,7 +54,7 @@ wallet_platform/
 ├── .coveragerc                 # pytest-cov configuration
 ├── .env                        # Environment variables
 ├── alembic.ini                 # Alembic configuration
-├── docker-compose.yml          # Docker Compose for the app, databases, and pgAdmin
+├── docker-compose.yml          # Docker Compose for the app, database, and pgAdmin
 ├── Dockerfile                  # Docker image for the application
 ├── pyproject.toml              # Project metadata, dependencies, pytest, ruff
 └── README.md
@@ -110,7 +111,6 @@ docker compose up -d --build
 
 This starts:
 - PostgreSQL for the app on `5431`
-- PostgreSQL for tests on `5433`
 - pgAdmin on `8080`
 - FastAPI on `8000`
 
@@ -146,12 +146,13 @@ Swagger UI is available at `http://localhost:8000/docs`.
 ## Database
 
 - Main database: PostgreSQL on `5431`
-- Test database: PostgreSQL on `5433`
+- Integration tests: temporary PostgreSQL containers via `testcontainers`
 - Migrations: Alembic in [alembic](./alembic)
 
 ## Tooling
 
 - Dependency management: `uv`
+- Dependency injection: `dishka`
 - Linting: `ruff`
 - Type checking: `mypy`
 - Testing: `pytest`
