@@ -2,6 +2,7 @@ import argparse
 import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from typing import Any
 
 import uvicorn
 from dishka import AsyncContainer, Scope, make_async_container
@@ -32,22 +33,29 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         await close_db()
 
 
-def create_app(container: AsyncContainer | None = None) -> FastAPI:
-    container = container or make_async_container(
-        MainProvider(),
-        start_scope=Scope.RUNTIME,
-    )
+def create_app(
+    container: AsyncContainer | None = None,
+    *,
+    setup_di: bool = True,
+    lifespan_context: Any = lifespan,
+) -> FastAPI:
+    if container is None and setup_di:
+        container = make_async_container(
+            MainProvider(),
+            start_scope=Scope.RUNTIME,
+        )
     app = FastAPI(
         title="Wallet Service API",
         description="API for wallet operations",
         version="1.0.0",
-        lifespan=lifespan,
+        lifespan=lifespan_context,
     )
 
     register_exception_handlers(app)
     for router in routers:
         app.include_router(router)
-    setup_dishka(container=container, app=app)
+    if container is not None and setup_di:
+        setup_dishka(container=container, app=app)
     return app
 
 
@@ -86,6 +94,3 @@ def main(argv: list[str] | None = None) -> None:
         use_colors=True,
         factory=True,
     )
-
-
-app = create_app()

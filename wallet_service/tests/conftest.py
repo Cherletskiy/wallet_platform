@@ -4,10 +4,12 @@ from collections.abc import AsyncIterator, Iterator
 from contextlib import asynccontextmanager
 from unittest.mock import AsyncMock, MagicMock
 
+import httpx
 import pytest
 import pytest_asyncio
 from dishka import Provider, Scope, from_context, make_async_container, provide
-from fastapi.testclient import TestClient
+from dishka.integrations.fastapi import setup_dishka
+from fastapi import FastAPI
 from sqlalchemy.ext.asyncio import (
     AsyncEngine,
     AsyncSession,
@@ -99,27 +101,35 @@ def apply_wallet_operation_interactor(
     return ApplyWalletOperationInteractor(mock_wallet_unit_of_work)
 
 
-@pytest.fixture
-def client(
+@pytest_asyncio.fixture
+async def app(
     mock_wallet_repository: MagicMock,
     mock_wallet_unit_of_work: AsyncMock,
-) -> Iterator[TestClient]:
+) -> AsyncIterator:
+    mock_wallet_unit_of_work.wallets = mock_wallet_repository
+
     class ApiTestProvider(Provider):
-        wallet_balance_gateway = provide(
-            lambda: mock_wallet_repository,
+        @provide(
+            scope=Scope.REQUEST,
             provides=WalletBalanceGateway,
-            scope=Scope.REQUEST,
         )
-        wallet_command_gateway = provide(
-            lambda: mock_wallet_repository,
+        def wallet_balance_gateway(self) -> WalletBalanceGateway:
+            return mock_wallet_repository
+
+        @provide(
+            scope=Scope.REQUEST,
             provides=WalletCommandGateway,
-            scope=Scope.REQUEST,
         )
-        wallet_unit_of_work = provide(
-            lambda: mock_wallet_unit_of_work,
+        def wallet_command_gateway(self) -> WalletCommandGateway:
+            return mock_wallet_repository
+
+        @provide(
+            scope=Scope.REQUEST,
             provides=WalletUnitOfWork,
-            scope=Scope.REQUEST,
         )
+        def wallet_unit_of_work(self) -> WalletUnitOfWork:
+            return mock_wallet_unit_of_work
+
         get_wallet_balance_interactor = provide(
             GetWalletBalanceInteractor,
             scope=Scope.REQUEST,
@@ -133,15 +143,27 @@ def client(
         ApiTestProvider(),
         start_scope=Scope.RUNTIME,
     )
-    app = create_app(container=container)
+    async with container(scope=Scope.APP) as app_container:
 
-    @asynccontextmanager
-    async def test_lifespan(_: object) -> AsyncIterator[None]:
-        yield
+        @asynccontextmanager
+        async def test_lifespan(_: object) -> AsyncIterator[None]:
+            yield
 
-    app.router.lifespan_context = test_lifespan
+        app = create_app(
+            setup_di=False,
+            lifespan_context=test_lifespan,
+        )
+        setup_dishka(app_container, app)
+        yield app
 
-    with TestClient(app) as test_client:
+
+@pytest_asyncio.fixture
+async def client(app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(
+        transport=transport,
+        base_url="http://testserver",
+    ) as test_client:
         yield test_client
 
 
