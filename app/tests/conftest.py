@@ -1,13 +1,15 @@
 import os
 import uuid
-from unittest.mock import MagicMock
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 from dotenv import load_dotenv
 from fastapi.testclient import TestClient
-from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
-from app.core.dependencies import get_wallet_repository
+from app.core.dependencies import get_async_session, get_wallet_repository
 from app.main import app
 from app.models.wallet import Wallet
 from app.repositories.wallet_repository import WalletRepository
@@ -23,8 +25,17 @@ TEST_DB_PORT = os.getenv("TEST_DB_PORT", 5432)
 
 
 @pytest.fixture
-def client():
-    """Фикстура для синхронного HTTP-клиента FastAPI."""
+def client(monkeypatch):
+    monkeypatch.setattr("app.main.run_migrations", AsyncMock())
+    monkeypatch.setattr("app.main.init_db", AsyncMock())
+    monkeypatch.setattr("app.main.close_db", AsyncMock())
+
+    @asynccontextmanager
+    async def test_lifespan(_: object) -> AsyncIterator[None]:
+        yield
+
+    app.router.lifespan_context = test_lifespan
+
     with TestClient(app) as c:
         yield c
 
@@ -43,8 +54,11 @@ def wallet_service(mock_wallet_repository):
 
 @pytest.fixture(autouse=True)
 def override_dependencies(mock_wallet_repository):
-    """Переопределение зависимостей для использования мокового репозитория."""
+    async def get_test_session() -> AsyncIterator[AsyncSession]:
+        yield AsyncMock(spec=AsyncSession)
+
     app.dependency_overrides[get_wallet_repository] = lambda: mock_wallet_repository
+    app.dependency_overrides[get_async_session] = get_test_session
     yield
     app.dependency_overrides.clear()
 

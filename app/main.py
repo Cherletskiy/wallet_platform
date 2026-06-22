@@ -3,6 +3,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 
+from app.api.exception_handlers import register_exception_handlers
 from app.api.v1.routes import router
 from app.core.database import close_db, init_db
 from app.core.logging_config import setup_logger
@@ -32,4 +33,5 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+register_exception_handlers(app)
 app.include_router(router)
