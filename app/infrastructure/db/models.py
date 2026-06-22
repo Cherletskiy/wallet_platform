@@ -1,4 +1,3 @@
-import enum
 import uuid
 from datetime import datetime
 
@@ -7,25 +6,26 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.asyncio import AsyncAttrs
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
+from app.domain.wallet import OperationType
+
 
 class Base(DeclarativeBase, AsyncAttrs):
     pass
 
 
-class OperationType(enum.Enum):
-    DEPOSIT = "DEPOSIT"
-    WITHDRAWAL = "WITHDRAWAL"
-
-
-class Wallet(Base):
+class WalletModel(Base):
     __tablename__ = "wallets"
 
     id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+        UUID(as_uuid=True),
+        primary_key=True,
+        default=uuid.uuid4,
     )
     balance_cent: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     created_at: Mapped[datetime] = mapped_column(
-        TIMESTAMP(timezone=True), nullable=False, server_default=func.now()
+        TIMESTAMP(timezone=True),
+        nullable=False,
+        server_default=func.now(),
     )
 
     __table_args__ = (
@@ -33,21 +33,30 @@ class Wallet(Base):
     )
 
 
-class Operation(Base):
+class OperationModel(Base):
     __tablename__ = "operations"
 
     id: Mapped[int] = mapped_column(
-        Integer, primary_key=True, autoincrement=True, index=True
+        Integer,
+        primary_key=True,
+        autoincrement=True,
+        index=True,
     )
     wallet_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("wallets.id"), nullable=False
+        UUID(as_uuid=True),
+        ForeignKey("wallets.id"),
+        nullable=False,
     )
     operation_type: Mapped[OperationType] = mapped_column(
-        Enum(OperationType), nullable=False
+        Enum(OperationType),
+        nullable=False,
     )
     amount_cent: Mapped[int] = mapped_column(Integer, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
-        TIMESTAMP(timezone=True), nullable=False, server_default=func.now(), index=True
+        TIMESTAMP(timezone=True),
+        nullable=False,
+        server_default=func.now(),
+        index=True,
     )
 
-    wallet = relationship("Wallet", backref="operations")
+    wallet = relationship("WalletModel", backref="operations")

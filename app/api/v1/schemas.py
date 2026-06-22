@@ -2,7 +2,7 @@ from decimal import Decimal
 
 from pydantic import BaseModel, Field
 
-from app.models.wallet import OperationType
+from app.domain.wallet import OperationType
 
 
 class WalletBalanceResponse(BaseModel):

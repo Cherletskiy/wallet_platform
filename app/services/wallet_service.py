@@ -10,7 +10,7 @@ from app.core.exceptions import (
     WalletOperationError,
 )
 from app.core.logging_config import setup_logger
-from app.models.wallet import OperationType
+from app.domain.wallet import OperationType
 from app.repositories.wallet_repository import WalletRepository
 
 logger = setup_logger(__name__)

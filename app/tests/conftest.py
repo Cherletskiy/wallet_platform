@@ -18,8 +18,8 @@ from sqlalchemy.ext.asyncio import (
 )
 from testcontainers.postgres import PostgresContainer
 
+from app.infrastructure.db.models import Base, WalletModel
 from app.main import create_app
-from app.models.wallet import Wallet
 from app.repositories.wallet_repository import WalletRepository
 from app.services.wallet_service import WalletService
 
@@ -108,8 +108,6 @@ async def engine(postgres_container: PostgresContainer) -> AsyncIterator[AsyncEn
 async def test_db(
     engine: AsyncEngine,
 ) -> AsyncIterator[async_sessionmaker[AsyncSession]]:
-    from app.models.wallet import Base
-
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
@@ -126,7 +124,7 @@ async def wallet(
 ) -> uuid.UUID:
     wallet_id = uuid.uuid4()
     async with test_db() as session:
-        wallet = Wallet(id=wallet_id, balance_cent=10000)
+        wallet = WalletModel(id=wallet_id, balance_cent=10000)
         session.add(wallet)
         await session.commit()
     return wallet_id

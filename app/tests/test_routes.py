@@ -1,7 +1,7 @@
 import uuid
 from unittest.mock import AsyncMock
 
-from app.models.wallet import OperationType, Wallet
+from app.domain.wallet import OperationType, Wallet
 
 base_url = "/api/v1/wallets"
 

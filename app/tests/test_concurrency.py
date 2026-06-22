@@ -4,7 +4,7 @@ import random
 import pytest
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.wallet import OperationType
+from app.domain.wallet import OperationType
 from app.repositories.wallet_repository import WalletRepository
 from app.services.wallet_service import WalletService
 

@@ -11,7 +11,7 @@ from app.core.exceptions import (
     WalletNotFoundError,
     WalletOperationError,
 )
-from app.models.wallet import OperationType, Wallet
+from app.domain.wallet import OperationType, Wallet
 from app.services.wallet_service import WalletService
 
 pytestmark = pytest.mark.asyncio
