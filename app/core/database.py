@@ -1,24 +1,16 @@
 from sqlalchemy import text
-from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
-from app.core.logging_config import setup_logger
-from app.core.config import settings
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
+from app.core.config import settings
+from app.core.logging_config import setup_logger
 
 logger = setup_logger(__name__)
 
 
-engine = create_async_engine(
-    url=settings.DSN,
-    echo=False,
-    pool_size=5,
-    max_overflow=10
-)
+engine = create_async_engine(url=settings.DSN, echo=False, pool_size=5, max_overflow=10)
 
 async_session_factory = async_sessionmaker(
-    bind=engine,
-    expire_on_commit=False,
-    autoflush=False,
-    class_=AsyncSession
+    bind=engine, expire_on_commit=False, autoflush=False, class_=AsyncSession
 )
 
 

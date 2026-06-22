@@ -1,9 +1,10 @@
 import uuid
+
 import pytest
 from sqlalchemy import select
-from app.repositories.wallet_repository import WalletRepository
-from app.models.wallet import Wallet, Operation, OperationType
 
+from app.models.wallet import Operation, OperationType
+from app.repositories.wallet_repository import WalletRepository
 
 pytestmark = pytest.mark.asyncio
 
@@ -61,7 +62,9 @@ async def test_update_wallet_balance_cent_success(test_db, wallet):
     new_balance_cent = 20000  # 200 рублей
 
     async with test_db() as session:
-        await wallet_repo.update_wallet_balance_cent(session, wallet_id, new_balance_cent)
+        await wallet_repo.update_wallet_balance_cent(
+            session, wallet_id, new_balance_cent
+        )
         await session.commit()
         wallet = await wallet_repo.get_wallet_by_id(session, wallet_id)
 
@@ -77,7 +80,9 @@ async def test_update_wallet_balance_cent_not_found(test_db):
 
     with pytest.raises(ValueError):
         async with test_db() as session:
-            await wallet_repo.update_wallet_balance_cent(session, wallet_id, new_balance_cent)
+            await wallet_repo.update_wallet_balance_cent(
+                session, wallet_id, new_balance_cent
+            )
 
 
 async def test_add_operation_success(test_db, wallet):
@@ -91,9 +96,7 @@ async def test_add_operation_success(test_db, wallet):
         await wallet_repo.add_operation(session, wallet_id, operation_type, amount_cent)
         await session.commit()
         operation = await session.scalar(
-            select(Operation)
-            .where(Operation.wallet_id == wallet_id)
-            .limit(1)
+            select(Operation).where(Operation.wallet_id == wallet_id).limit(1)
         )
 
         assert operation is not None

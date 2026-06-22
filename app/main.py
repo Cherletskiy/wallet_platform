@@ -1,18 +1,18 @@
-from fastapi import FastAPI
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
-from app.core.database import init_db, close_db
-from app.core.migrations import run_migrations
-from app.api.v1.routes import router
-from app.core.logging_config import setup_logger
+from fastapi import FastAPI
 
+from app.api.v1.routes import router
+from app.core.database import close_db, init_db
+from app.core.logging_config import setup_logger
+from app.core.migrations import run_migrations
 
 logger = setup_logger(__name__)
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
-    """Управление жизненным циклом приложения"""
+async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     logger.info("Starting app")
     try:
         await run_migrations()
@@ -29,7 +29,7 @@ app = FastAPI(
     title="Wallet Service API",
     description="API для работы с кошельками",
     version="1.0.0",
-    lifespan=lifespan
+    lifespan=lifespan,
 )
 
 app.include_router(router)

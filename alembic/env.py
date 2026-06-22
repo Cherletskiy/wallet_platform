@@ -1,8 +1,8 @@
 from sqlalchemy import engine_from_config, pool
-from alembic import context
 
-from app.models.wallet import Base
+from alembic import context
 from app.core.config import settings
+from app.models.wallet import Base
 
 # Инициализация Alembic config
 config = context.config
