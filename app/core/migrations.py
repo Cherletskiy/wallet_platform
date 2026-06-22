@@ -1,11 +1,14 @@
 import os
-from alembic import command
-from alembic.config import Config
+
 import anyio
+from alembic.config import Config
+
+from alembic import command
 
 
 async def run_migrations():
     """Применяет все миграции до head."""
+
     def _run():
         # Базовая директория
         base_dir = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))

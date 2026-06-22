@@ -1,3 +1,5 @@
+from collections.abc import AsyncGenerator
+
 from fastapi import Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -6,15 +8,10 @@ from app.core.logging_config import setup_logger
 from app.repositories.wallet_repository import WalletRepository
 from app.services.wallet_service import WalletService
 
-
 logger = setup_logger(__name__)
 
 
-async def get_async_session() -> AsyncSession:
-    """Зависимость для получения асинхронной сессии в эндпоинтах.
-    Пропускает HTTPException в случае ошибки, так как эти ошибки обрабатываются внутри сервиса.
-    Остальные ошибки логируются, вызывается rollback и 500 клиенту.
-    """
+async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
     async with async_session_factory() as session:
         try:
             yield session
@@ -29,14 +26,10 @@ async def get_async_session() -> AsyncSession:
 
 
 async def get_wallet_repository() -> WalletRepository:
-    """Зависимость для получения репозитория."""
     return WalletRepository()
 
 
-async def get_wallet_service(repository: WalletRepository = Depends(get_wallet_repository)) -> WalletService:
-    """Зависимость для получения сервиса, используется в эндопинтах.
-    Depends(get_wallet_repository) для возможного переопределения репозитория в тестах.
-    """
-    return WalletService(
-        wallet_repository=repository
-    )
+async def get_wallet_service(
+    repository: WalletRepository = Depends(get_wallet_repository),
+) -> WalletService:
+    return WalletService(wallet_repository=repository)

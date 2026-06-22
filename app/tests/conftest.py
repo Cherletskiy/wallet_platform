@@ -1,18 +1,17 @@
+import os
 import uuid
+from unittest.mock import MagicMock
+
 import pytest
 from dotenv import load_dotenv
-import os
-
 from fastapi.testclient import TestClient
-from unittest.mock import MagicMock
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sessionmaker
+from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
-from app.main import app
 from app.core.dependencies import get_wallet_repository
+from app.main import app
 from app.models.wallet import Wallet
 from app.repositories.wallet_repository import WalletRepository
 from app.services.wallet_service import WalletService
-
 
 load_dotenv()
 
@@ -54,13 +53,9 @@ def override_dependencies(mock_wallet_repository):
 async def test_db():
     """Фикстура для тестовой базы данных."""
     test_dsn = f"postgresql+asyncpg://{TEST_DB_USER}:{TEST_DB_PWD}@{TEST_DB_HOST}:{TEST_DB_PORT}/{TEST_DB_NAME}"
-    engine = create_async_engine(
-        url=test_dsn,
-        echo=False,
-        pool_size=5,
-        max_overflow=10
-    )
+    engine = create_async_engine(url=test_dsn, echo=False, pool_size=5, max_overflow=10)
     from app.models.wallet import Base
+
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
