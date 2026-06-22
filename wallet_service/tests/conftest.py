@@ -1,4 +1,3 @@
-import asyncio
 import os
 import uuid
 from collections.abc import AsyncIterator, Iterator
@@ -17,6 +16,7 @@ from sqlalchemy.ext.asyncio import (
 )
 from testcontainers.postgres import PostgresContainer
 
+from wallet_service import create_app
 from wallet_service.application.commands.apply_wallet_operation.gateway import (
     WalletCommandGateway,
 )
@@ -29,7 +29,6 @@ from wallet_service.application.queries.get_wallet_balance.gateway import (
 from wallet_service.application.queries.get_wallet_balance.interactor import (
     GetWalletBalanceInteractor,
 )
-from wallet_service import create_app
 from wallet_service.application.unit_of_work import WalletUnitOfWork
 from wallet_service.infrastructure.sa.models import Base, WalletModel
 from wallet_service.infrastructure.sa.repositories.wallet_repository import (
@@ -105,14 +104,34 @@ def client(
     mock_wallet_repository: MagicMock,
     mock_wallet_unit_of_work: AsyncMock,
 ) -> Iterator[TestClient]:
+    class ApiTestProvider(Provider):
+        wallet_balance_gateway = provide(
+            lambda: mock_wallet_repository,
+            provides=WalletBalanceGateway,
+            scope=Scope.REQUEST,
+        )
+        wallet_command_gateway = provide(
+            lambda: mock_wallet_repository,
+            provides=WalletCommandGateway,
+            scope=Scope.REQUEST,
+        )
+        wallet_unit_of_work = provide(
+            lambda: mock_wallet_unit_of_work,
+            provides=WalletUnitOfWork,
+            scope=Scope.REQUEST,
+        )
+        get_wallet_balance_interactor = provide(
+            GetWalletBalanceInteractor,
+            scope=Scope.REQUEST,
+        )
+        apply_wallet_operation_interactor = provide(
+            ApplyWalletOperationInteractor,
+            scope=Scope.REQUEST,
+        )
+
     container = make_async_container(
-        TestProvider(),
-        context={
-            WalletBalanceGateway: mock_wallet_repository,
-            WalletCommandGateway: mock_wallet_repository,
-            WalletUnitOfWork: mock_wallet_unit_of_work,
-        },
-        start_scope=Scope.APP,
+        ApiTestProvider(),
+        start_scope=Scope.RUNTIME,
     )
     app = create_app(container=container)
 
@@ -124,8 +143,6 @@ def client(
 
     with TestClient(app) as test_client:
         yield test_client
-
-    asyncio.run(container.close())
 
 
 @pytest.fixture(scope="session")

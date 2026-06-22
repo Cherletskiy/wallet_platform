@@ -8,9 +8,7 @@ base_url = "/api/v1/wallets"
 
 def test_get_wallet_balance_success(client, mock_wallet_repository):
     wallet_id = uuid.uuid4()
-    mock_wallet_repository.get_wallet_balance_cent = AsyncMock(
-        return_value=10000
-    )
+    mock_wallet_repository.get_wallet_balance_cent = AsyncMock(return_value=10000)
 
     response = client.get(f"{base_url}/{wallet_id}")
 

@@ -27,9 +27,7 @@ async def test_get_wallet_balance_rub_success(
     mock_wallet_repository,
 ):
     wallet_id = uuid.uuid4()
-    mock_wallet_repository.get_wallet_balance_cent = AsyncMock(
-        return_value=10000
-    )
+    mock_wallet_repository.get_wallet_balance_cent = AsyncMock(return_value=10000)
 
     balance = await get_wallet_balance_interactor.execute(wallet_id)
 

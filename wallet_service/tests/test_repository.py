@@ -88,9 +88,7 @@ async def test_add_operation_success(test_db, wallet):
         await wallet_repo.add_operation(wallet_id, operation_type, amount_cent)
         await session.commit()
         operation = await session.scalar(
-            select(OperationModel)
-            .where(OperationModel.wallet_id == wallet_id)
-            .limit(1)
+            select(OperationModel).where(OperationModel.wallet_id == wallet_id).limit(1)
         )
 
         assert operation is not None

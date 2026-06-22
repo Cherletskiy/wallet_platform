@@ -46,9 +46,7 @@ class SQLAlchemyWalletRepository:
         wallet_model = cast(
             WalletModel | None,
             await self._session.scalar(
-                select(WalletModel)
-                .where(WalletModel.id == wallet_id)
-                .with_for_update()
+                select(WalletModel).where(WalletModel.id == wallet_id).with_for_update()
             ),
         )
         if wallet_model is None:

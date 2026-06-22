@@ -35,7 +35,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
 def create_app(container: AsyncContainer | None = None) -> FastAPI:
     container = container or make_async_container(
         MainProvider(),
-        start_scope=Scope.APP,
+        start_scope=Scope.RUNTIME,
     )
     app = FastAPI(
         title="Wallet Service API",
