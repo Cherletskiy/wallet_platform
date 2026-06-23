@@ -13,6 +13,7 @@ class Config:
     db_name: str
     db_user: str
     db_password: str
+    kafka_bootstrap_servers: str
     outbox_scheduler_enabled: bool
     outbox_scheduler_interval_seconds: float
     outbox_scheduler_batch_size: int
@@ -33,6 +34,10 @@ class Config:
             db_name=os.getenv("DB_NAME", "wallet_db"),
             db_user=os.getenv("DB_USER", "postgres"),
             db_password=os.getenv("DB_PASSWORD", os.getenv("DB_PWD", "postgres")),
+            kafka_bootstrap_servers=os.getenv(
+                "KAFKA_BOOTSTRAP_SERVERS",
+                "localhost:19092",
+            ),
             outbox_scheduler_enabled=os.getenv(
                 "OUTBOX_SCHEDULER_ENABLED",
                 "true",

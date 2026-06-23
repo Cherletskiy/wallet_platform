@@ -1,4 +1,5 @@
 from collections.abc import AsyncIterator
+from typing import Any
 
 from dishka import Provider, Scope, provide
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
@@ -23,7 +24,10 @@ from wallet_service.application.queries.get_wallet_balance.interactor import (
     GetWalletBalanceInteractor,
 )
 from wallet_service.application.unit_of_work import WalletUnitOfWork
-from wallet_service.infrastructure.outbox_publisher import LoggingOutboxPublisher
+from wallet_service.config import config
+from wallet_service.infrastructure.faststream.publisher import (
+    FastStreamKafkaOutboxPublisher,
+)
 from wallet_service.infrastructure.sa.repositories.outbox_repository import (
     SQLAlchemyOutboxRepository,
 )
@@ -37,6 +41,15 @@ from wallet_service.infrastructure.sa.unit_of_work import (
 
 
 class MainProvider(Provider):
+    @provide(scope=Scope.APP)
+    async def get_kafka_broker(self) -> AsyncIterator[Any]:
+        from faststream.kafka import KafkaBroker
+
+        broker = KafkaBroker(bootstrap_servers=config.kafka_bootstrap_servers)
+        await broker.connect()
+        yield broker
+        await broker.stop()
+
     @provide(scope=Scope.APP)
     def get_sessionmaker(self) -> async_sessionmaker[AsyncSession]:
         return async_session_factory
@@ -65,7 +78,7 @@ class MainProvider(Provider):
         scope=Scope.REQUEST,
     )
     outbox_publisher = provide(
-        LoggingOutboxPublisher,
+        FastStreamKafkaOutboxPublisher,
         provides=OutboxPublisher,
         scope=Scope.APP,
     )
