@@ -8,6 +8,7 @@ from wallet_service.domain.exceptions import (
     WalletNotFoundError,
     WalletOperationError,
 )
+from wallet_service.domain.outbox import OutboxEvent
 from wallet_service.domain.wallet import OperationType
 
 
@@ -48,10 +49,25 @@ class ApplyWalletOperationInteractor:
                 data.operation_type,
                 data.amount_cent,
             )
+            await self._uow.outbox.add(
+                OutboxEvent(
+                    aggregate_type="wallet",
+                    aggregate_id=data.wallet_id,
+                    event_type="wallet.transaction.created",
+                    payload={
+                        "wallet_id": str(data.wallet_id),
+                        "operation_type": data.operation_type.value,
+                        "amount_cent": data.amount_cent,
+                        "balance_cent": new_balance_cent,
+                    },
+                )
+            )
             await self._uow.commit()
         except ValueError as exc:
+            await self._uow.rollback()
             raise WalletNotFoundError from exc
         except Exception as exc:
+            await self._uow.rollback()
             raise WalletOperationError from exc
 
         return round(new_balance_cent / 100, 2)
