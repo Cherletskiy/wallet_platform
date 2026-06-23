@@ -25,6 +25,13 @@ from wallet_service.application.commands.apply_wallet_operation.gateway import (
 from wallet_service.application.commands.apply_wallet_operation.interactor import (
     ApplyWalletOperationInteractor,
 )
+from wallet_service.application.commands.outbox_processor.interactor import (
+    OutboxProcessorInteractor,
+)
+from wallet_service.application.commands.outbox_processor.publisher import (
+    OutboxPublisher,
+)
+from wallet_service.application.outbox.gateway import OutboxGateway
 from wallet_service.application.queries.get_wallet_balance.gateway import (
     WalletBalanceGateway,
 )
@@ -33,6 +40,9 @@ from wallet_service.application.queries.get_wallet_balance.interactor import (
 )
 from wallet_service.application.unit_of_work import WalletUnitOfWork
 from wallet_service.infrastructure.sa.models import Base, WalletModel
+from wallet_service.infrastructure.sa.repositories.outbox_repository import (
+    SQLAlchemyOutboxRepository,
+)
 from wallet_service.infrastructure.sa.repositories.wallet_repository import (
     SQLAlchemyWalletRepository,
 )
@@ -54,6 +64,10 @@ class TestProvider(Provider):
     )
     wallet_unit_of_work = from_context(
         provides=WalletUnitOfWork,
+        scope=Scope.REQUEST,
+    )
+    outbox_gateway = from_context(
+        provides=OutboxGateway,
         scope=Scope.REQUEST,
     )
     get_wallet_balance_interactor = provide(
@@ -81,8 +95,18 @@ def mock_wallet_repository() -> MagicMock:
 
 
 @pytest.fixture
+def mock_outbox_repository() -> MagicMock:
+    return MagicMock(spec=SQLAlchemyOutboxRepository)
+
+
+@pytest.fixture
 def mock_wallet_unit_of_work() -> AsyncMock:
     return AsyncMock(spec=SQLAlchemyWalletUnitOfWork)
+
+
+@pytest.fixture
+def mock_outbox_publisher() -> AsyncMock:
+    return AsyncMock(spec=OutboxPublisher)
 
 
 @pytest.fixture
@@ -95,18 +119,32 @@ def get_wallet_balance_interactor(
 @pytest.fixture
 def apply_wallet_operation_interactor(
     mock_wallet_repository: MagicMock,
+    mock_outbox_repository: MagicMock,
     mock_wallet_unit_of_work: AsyncMock,
 ) -> ApplyWalletOperationInteractor:
     mock_wallet_unit_of_work.wallets = mock_wallet_repository
+    mock_wallet_unit_of_work.outbox = mock_outbox_repository
     return ApplyWalletOperationInteractor(mock_wallet_unit_of_work)
+
+
+@pytest.fixture
+def outbox_processor_interactor(
+    mock_outbox_repository: MagicMock,
+    mock_outbox_publisher: AsyncMock,
+    mock_wallet_unit_of_work: AsyncMock,
+) -> OutboxProcessorInteractor:
+    mock_wallet_unit_of_work.outbox = mock_outbox_repository
+    return OutboxProcessorInteractor(mock_wallet_unit_of_work, mock_outbox_publisher)
 
 
 @pytest_asyncio.fixture
 async def app(
     mock_wallet_repository: MagicMock,
+    mock_outbox_repository: MagicMock,
     mock_wallet_unit_of_work: AsyncMock,
 ) -> AsyncIterator:
     mock_wallet_unit_of_work.wallets = mock_wallet_repository
+    mock_wallet_unit_of_work.outbox = mock_outbox_repository
 
     class ApiTestProvider(Provider):
         @provide(
@@ -129,6 +167,13 @@ async def app(
         )
         def wallet_unit_of_work(self) -> WalletUnitOfWork:
             return mock_wallet_unit_of_work
+
+        @provide(
+            scope=Scope.REQUEST,
+            provides=OutboxGateway,
+        )
+        def outbox_gateway(self) -> OutboxGateway:
+            return mock_outbox_repository
 
         get_wallet_balance_interactor = provide(
             GetWalletBalanceInteractor,

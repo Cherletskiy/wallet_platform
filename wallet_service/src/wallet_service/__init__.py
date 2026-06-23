@@ -1,7 +1,7 @@
 import argparse
 import os
 from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
+from contextlib import AsyncExitStack, asynccontextmanager
 from typing import Any
 
 import uvicorn
@@ -9,11 +9,15 @@ from dishka import AsyncContainer, Scope, make_async_container
 from dishka.integrations.fastapi import setup_dishka
 from fastapi import FastAPI
 
+from wallet_service.config import config
 from wallet_service.infrastructure.logging import setup_logger
 from wallet_service.infrastructure.sa.migrations import run_migrations
 from wallet_service.infrastructure.sa.session import close_db, init_db
 from wallet_service.ioc import MainProvider
 from wallet_service.presentation.api import register_exception_handlers, routers
+from wallet_service.presentation.outbox_scheduler import (
+    create_outbox_scheduler_lifespan,
+)
 
 logger = setup_logger(__name__)
 
@@ -44,6 +48,17 @@ def create_app(
             MainProvider(),
             start_scope=Scope.RUNTIME,
         )
+    if container is not None and setup_di and lifespan_context is lifespan:
+        outbox_scheduler_lifespan = create_outbox_scheduler_lifespan(container, config)
+
+        @asynccontextmanager
+        async def combined_lifespan(app: FastAPI) -> AsyncIterator[None]:
+            async with AsyncExitStack() as stack:
+                await stack.enter_async_context(lifespan(app))
+                await stack.enter_async_context(outbox_scheduler_lifespan())
+                yield
+
+        lifespan_context = combined_lifespan
     app = FastAPI(
         title="Wallet Service API",
         description="API for wallet operations",
