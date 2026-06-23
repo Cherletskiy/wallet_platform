@@ -21,12 +21,13 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Upgrade schema."""
-    outbox_status = sa.Enum(
+    outbox_status = postgresql.ENUM(
         "PENDING",
         "FAILED",
         "PUBLISHED",
         "DEAD_LETTER",
         name="outboxstatus",
+        create_type=False,
     )
     outbox_status.create(op.get_bind(), checkfirst=True)
 

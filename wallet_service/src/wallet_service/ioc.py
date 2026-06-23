@@ -17,6 +17,7 @@ from wallet_service.application.commands.outbox_processor.publisher import (
     OutboxPublisher,
 )
 from wallet_service.application.outbox.gateway import OutboxGateway
+from wallet_service.application.outbox.unit_of_work import OutboxUnitOfWork
 from wallet_service.application.queries.get_wallet_balance.gateway import (
     WalletBalanceGateway,
 )
@@ -85,6 +86,11 @@ class MainProvider(Provider):
     wallet_unit_of_work = provide(
         SQLAlchemyWalletUnitOfWork,
         provides=WalletUnitOfWork,
+        scope=Scope.REQUEST,
+    )
+    outbox_unit_of_work = provide(
+        SQLAlchemyWalletUnitOfWork,
+        provides=OutboxUnitOfWork,
         scope=Scope.REQUEST,
     )
     get_wallet_balance_interactor = provide(
