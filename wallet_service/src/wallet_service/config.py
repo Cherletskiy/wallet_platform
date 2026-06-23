@@ -29,11 +29,17 @@ class Config:
     @classmethod
     def from_env(cls) -> "Config":
         return cls(
-            db_host=os.getenv("DB_HOST", "db"),
-            db_port=os.getenv("DB_PORT", "5432"),
-            db_name=os.getenv("DB_NAME", "wallet_db"),
-            db_user=os.getenv("DB_USER", "postgres"),
-            db_password=os.getenv("DB_PASSWORD", os.getenv("DB_PWD", "postgres")),
+            db_host=os.getenv("POSTGRES_HOST", os.getenv("DB_HOST", "db")),
+            db_port=os.getenv("POSTGRES_PORT", os.getenv("DB_PORT", "5432")),
+            db_name=os.getenv("POSTGRES_DB", os.getenv("DB_NAME", "wallet_db")),
+            db_user=os.getenv("POSTGRES_USER", os.getenv("DB_USER", "postgres")),
+            db_password=os.getenv(
+                "POSTGRES_PASSWORD",
+                os.getenv(
+                    "DB_PASSWORD",
+                    os.getenv("DB_PWD", "postgres"),
+                ),
+            ),
             kafka_bootstrap_servers=os.getenv(
                 "KAFKA_BOOTSTRAP_SERVERS",
                 "localhost:19092",
