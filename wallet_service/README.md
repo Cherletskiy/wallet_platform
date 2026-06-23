@@ -66,7 +66,7 @@ uv sync --group dev
 
 3. Start local infrastructure:
 ```bash
-docker compose --env-file local.env up -d
+docker compose up -d
 ```
 
 4. Run the service locally:

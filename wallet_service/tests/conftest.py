@@ -216,9 +216,9 @@ async def client(app: FastAPI) -> AsyncIterator[httpx.AsyncClient]:
 def postgres_container() -> Iterator[PostgresContainer]:
     with PostgresContainer(
         POSTGRES_IMAGE,
-        username=os.getenv("DB_USER", "postgres"),
-        password=os.getenv("DB_PASSWORD") or os.getenv("DB_PWD", "postgres"),
-        dbname=os.getenv("DB_NAME", "postgres"),
+        username=os.getenv("POSTGRES_USER", "postgres"),
+        password=os.getenv("POSTGRES_PASSWORD", "postgres"),
+        dbname=os.getenv("POSTGRES_DB", "postgres"),
     ) as container:
         yield container
 
