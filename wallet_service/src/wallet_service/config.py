@@ -13,6 +13,9 @@ class Config:
     db_name: str
     db_user: str
     db_password: str
+    outbox_scheduler_enabled: bool
+    outbox_scheduler_interval_seconds: float
+    outbox_scheduler_batch_size: int
 
     @property
     def dsn(self) -> str:
@@ -30,6 +33,17 @@ class Config:
             db_name=os.getenv("DB_NAME", "wallet_db"),
             db_user=os.getenv("DB_USER", "postgres"),
             db_password=os.getenv("DB_PASSWORD", os.getenv("DB_PWD", "postgres")),
+            outbox_scheduler_enabled=os.getenv(
+                "OUTBOX_SCHEDULER_ENABLED",
+                "true",
+            ).lower()
+            == "true",
+            outbox_scheduler_interval_seconds=float(
+                os.getenv("OUTBOX_SCHEDULER_INTERVAL_SECONDS", "5")
+            ),
+            outbox_scheduler_batch_size=int(
+                os.getenv("OUTBOX_SCHEDULER_BATCH_SIZE", "100")
+            ),
         )
 
 

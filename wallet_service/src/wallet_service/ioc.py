@@ -9,6 +9,12 @@ from wallet_service.application.commands.apply_wallet_operation.gateway import (
 from wallet_service.application.commands.apply_wallet_operation.interactor import (
     ApplyWalletOperationInteractor,
 )
+from wallet_service.application.commands.outbox_processor.interactor import (
+    OutboxProcessorInteractor,
+)
+from wallet_service.application.commands.outbox_processor.publisher import (
+    OutboxPublisher,
+)
 from wallet_service.application.outbox.gateway import OutboxGateway
 from wallet_service.application.queries.get_wallet_balance.gateway import (
     WalletBalanceGateway,
@@ -17,6 +23,7 @@ from wallet_service.application.queries.get_wallet_balance.interactor import (
     GetWalletBalanceInteractor,
 )
 from wallet_service.application.unit_of_work import WalletUnitOfWork
+from wallet_service.infrastructure.outbox_publisher import LoggingOutboxPublisher
 from wallet_service.infrastructure.sa.repositories.outbox_repository import (
     SQLAlchemyOutboxRepository,
 )
@@ -57,6 +64,11 @@ class MainProvider(Provider):
         provides=OutboxGateway,
         scope=Scope.REQUEST,
     )
+    outbox_publisher = provide(
+        LoggingOutboxPublisher,
+        provides=OutboxPublisher,
+        scope=Scope.APP,
+    )
     wallet_unit_of_work = provide(
         SQLAlchemyWalletUnitOfWork,
         provides=WalletUnitOfWork,
@@ -68,5 +80,9 @@ class MainProvider(Provider):
     )
     apply_wallet_operation_interactor = provide(
         ApplyWalletOperationInteractor,
+        scope=Scope.REQUEST,
+    )
+    outbox_processor_interactor = provide(
+        OutboxProcessorInteractor,
         scope=Scope.REQUEST,
     )
