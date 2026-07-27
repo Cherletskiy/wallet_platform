@@ -86,8 +86,6 @@ services:
       - ./wallet_service/local.env
     environment:
       POSTGRES_HOST: wallet_db
-    ports:
-      - 8000:8000
     depends_on:
       wallet_db:
         condition: service_healthy
@@ -103,8 +101,6 @@ services:
       - ./auth_service/local.env
     environment:
       POSTGRES_HOST: auth_db
-    ports:
-      - 8002:8002
     depends_on:
       auth_db:
         condition: service_healthy
@@ -133,8 +129,6 @@ services:
       - ./notification_service/local.env
     environment:
       POSTGRES_HOST: notification_db
-    ports:
-      - 8001:8001
     depends_on:
       notification_db:
         condition: service_healthy
