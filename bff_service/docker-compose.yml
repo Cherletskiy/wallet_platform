@@ -1,0 +1,10 @@
+services:
+  bff_service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    env_file:
+      - local.env
+    ports:
+      - 8003:8003

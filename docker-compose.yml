@@ -109,6 +109,21 @@ services:
       auth_db:
         condition: service_healthy
 
+  bff_service:
+    build:
+      context: ./bff_service
+      dockerfile: Dockerfile
+    restart: always
+    env_file:
+      - ./bff_service/local.env
+    ports:
+      - 8003:8003
+    depends_on:
+      auth_service:
+        condition: service_started
+      wallet_service:
+        condition: service_started
+
   notification_service:
     build:
       context: ./notification_service
