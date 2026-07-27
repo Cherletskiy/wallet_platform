@@ -1,8 +1,9 @@
 import uuid
 from collections.abc import Awaitable, Callable
 
+from faststream import Depends
 from faststream.kafka import KafkaBroker
-from faststream.kafka.message import KafkaMessage
+from faststream.kafka.annotations import KafkaMessage as RawKafkaMessage
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
@@ -24,6 +25,13 @@ class WalletTransactionCreatedMessage(BaseModel):
     operation_type: WalletOperationType
     amount_cent: int
     balance_cent: int
+
+
+def get_event_id(message: RawKafkaMessage) -> uuid.UUID:
+    return uuid.UUID(message.correlation_id)
+
+
+EVENT_ID = Depends(get_event_id)
 
 
 async def process_wallet_transaction_message(
@@ -49,16 +57,15 @@ async def process_wallet_transaction_message(
 def register_wallet_transaction_consumer(
     broker: KafkaBroker,
     session_factory: async_sessionmaker[AsyncSession],
-) -> Callable[[WalletTransactionCreatedMessage, KafkaMessage], Awaitable[None]]:
+) -> Callable[[WalletTransactionCreatedMessage, uuid.UUID], Awaitable[None]]:
     @broker.subscriber(
         "wallet.transaction.created",
         group_id="notification-service",
     )
     async def wallet_transaction_created(
         message: WalletTransactionCreatedMessage,
-        kafka_message: KafkaMessage,
+        event_id: uuid.UUID = EVENT_ID,
     ) -> None:
-        event_id = uuid.UUID(kafka_message.correlation_id)
         created = await process_wallet_transaction_message(
             message,
             event_id,
