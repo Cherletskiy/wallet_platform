@@ -1,3 +1,5 @@
+import uuid
+
 from wallet_service.application.commands.apply_wallet_operation.dto import (
     ApplyWalletOperationInput,
 )
@@ -5,6 +7,7 @@ from wallet_service.application.unit_of_work import WalletUnitOfWork
 from wallet_service.domain.exceptions import (
     InsufficientFundsError,
     InvalidAmountError,
+    WalletAccessDeniedError,
     WalletNotFoundError,
     WalletOperationError,
 )
@@ -19,13 +22,19 @@ class ApplyWalletOperationInteractor:
     ) -> None:
         self._uow = uow
 
-    async def execute(self, data: ApplyWalletOperationInput) -> float:
+    async def execute(
+        self,
+        data: ApplyWalletOperationInput,
+        current_user_id: uuid.UUID,
+    ) -> float:
         if data.amount_cent <= 0:
             raise InvalidAmountError
 
         wallet = await self._uow.wallets.get_wallet_by_id(data.wallet_id)
         if wallet is None:
             raise WalletNotFoundError
+        if wallet.owner_user_id != current_user_id:
+            raise WalletAccessDeniedError
 
         if (
             data.operation_type == OperationType.WITHDRAWAL

@@ -1,6 +1,8 @@
 import uuid
 from typing import Protocol
 
+from wallet_service.domain.wallet import Wallet
+
 
 class WalletBalanceGateway(Protocol):
-    async def get_wallet_balance_cent(self, wallet_id: uuid.UUID) -> int | None: ...
+    async def get_wallet_by_id(self, wallet_id: uuid.UUID) -> Wallet | None: ...

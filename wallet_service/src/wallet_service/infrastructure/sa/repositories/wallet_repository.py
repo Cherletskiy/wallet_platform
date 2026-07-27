@@ -13,6 +13,12 @@ class SQLAlchemyWalletRepository:
     def __init__(self, session: AsyncSession) -> None:
         self._session = session
 
+    async def create_wallet(self, owner_user_id: uuid.UUID) -> Wallet:
+        wallet_model = WalletModel(owner_user_id=owner_user_id, balance_cent=0)
+        self._session.add(wallet_model)
+        await self._session.flush()
+        return map_wallet_model(wallet_model)
+
     async def get_wallet_by_id(
         self,
         wallet_id: uuid.UUID,
@@ -29,14 +35,6 @@ class SQLAlchemyWalletRepository:
         if wallet_model is None:
             return None
         return map_wallet_model(wallet_model)
-
-    async def get_wallet_balance_cent(self, wallet_id: uuid.UUID) -> int | None:
-        return cast(
-            int | None,
-            await self._session.scalar(
-                select(WalletModel.balance_cent).where(WalletModel.id == wallet_id)
-            ),
-        )
 
     async def update_wallet_balance_cent(
         self,

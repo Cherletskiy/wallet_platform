@@ -20,3 +20,11 @@ class WalletBalanceError(WalletError):
 
 class WalletOperationError(WalletError):
     pass
+
+
+class AuthorizationError(WalletError):
+    pass
+
+
+class WalletAccessDeniedError(WalletError):
+    pass

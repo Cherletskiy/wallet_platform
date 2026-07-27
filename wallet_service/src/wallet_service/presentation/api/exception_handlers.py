@@ -2,8 +2,10 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
 from wallet_service.domain.exceptions import (
+    AuthorizationError,
     InsufficientFundsError,
     InvalidAmountError,
+    WalletAccessDeniedError,
     WalletBalanceError,
     WalletNotFoundError,
     WalletOperationError,
@@ -11,6 +13,18 @@ from wallet_service.domain.exceptions import (
 
 
 def register_exception_handlers(app: FastAPI) -> None:
+    @app.exception_handler(AuthorizationError)
+    async def authorization_error_handler(
+        request: Request, exc: AuthorizationError
+    ) -> JSONResponse:
+        return JSONResponse(status_code=401, content={"detail": str(exc)})
+
+    @app.exception_handler(WalletAccessDeniedError)
+    async def wallet_access_denied_handler(
+        request: Request, exc: WalletAccessDeniedError
+    ) -> JSONResponse:
+        return JSONResponse(status_code=403, content={"detail": "Wallet access denied"})
+
     @app.exception_handler(WalletNotFoundError)
     async def wallet_not_found_handler(
         request: Request, exc: WalletNotFoundError

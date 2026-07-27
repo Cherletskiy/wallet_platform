@@ -31,6 +31,11 @@ class WalletModel(Base):
         primary_key=True,
         default=uuid.uuid4,
     )
+    owner_user_id: Mapped[uuid.UUID | None] = mapped_column(
+        UUID(as_uuid=True),
+        nullable=True,
+        index=True,
+    )
     balance_cent: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     created_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True),

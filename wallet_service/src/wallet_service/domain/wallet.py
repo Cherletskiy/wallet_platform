@@ -21,6 +21,7 @@ class Operation:
 @dataclass(slots=True)
 class Wallet:
     id: uuid.UUID
+    owner_user_id: uuid.UUID | None = None
     balance_cent: int = 0
     created_at: datetime | None = None
     operations: list[Operation] = field(default_factory=list)

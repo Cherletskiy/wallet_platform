@@ -61,6 +61,30 @@ async def test_wallet_get_forwards_identity_headers(client, downstream_gateway) 
     }
 
 
+async def test_wallet_create_forwards_identity_headers(
+    client, downstream_gateway
+) -> None:
+    token = make_access_token()
+
+    response = await client.post(
+        "/api/v1/wallets",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 201
+    assert response.json() == {
+        "wallet_id": "11111111-1111-1111-1111-111111111111",
+        "balance_rub": 0.0,
+    }
+    assert downstream_gateway.last_call == {
+        "headers": {
+            "X-User-Id": "11111111-1111-1111-1111-111111111111",
+            "X-User-Roles": "user",
+            "X-User-Email-Verified": "true",
+        }
+    }
+
+
 async def test_wallet_operation_requires_valid_token(client) -> None:
     response = await client.post(
         "/api/v1/wallets/11111111-1111-1111-1111-111111111111/operation",

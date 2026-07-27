@@ -48,6 +48,18 @@ class DownstreamGateway:
             )
         return self._build_proxy_response(response)
 
+    async def create_wallet(
+        self,
+        *,
+        headers: dict[str, str],
+    ) -> ProxyResponse:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.post(
+                f"{self._cfg.wallet_service_url}/api/v1/wallets",
+                headers=headers,
+            )
+        return self._build_proxy_response(response)
+
     async def apply_wallet_operation(
         self,
         *,
