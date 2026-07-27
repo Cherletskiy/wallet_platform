@@ -10,6 +10,7 @@ from typing import Sequence, Union
 
 import sqlalchemy as sa
 from alembic import op
+from sqlalchemy.dialects import postgresql
 
 revision: str = "55cb3e5df204"
 down_revision: Union[str, Sequence[str], None] = None
@@ -18,10 +19,11 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    wallet_operation_type = sa.Enum(
+    wallet_operation_type = postgresql.ENUM(
         "DEPOSIT",
         "WITHDRAWAL",
         name="walletoperationtype",
+        create_type=False,
     )
     wallet_operation_type.create(op.get_bind(), checkfirst=True)
 
