@@ -6,6 +6,11 @@ import pytest
 from wallet_service.domain.wallet import OperationType, Wallet
 
 base_url = "/api/v1/wallets"
+auth_headers = {
+    "X-User-Id": "11111111-1111-1111-1111-111111111111",
+    "X-User-Roles": "user",
+    "X-User-Email-Verified": "true",
+}
 
 pytestmark = pytest.mark.asyncio
 
@@ -14,7 +19,7 @@ async def test_get_wallet_balance_success(client, mock_wallet_repository):
     wallet_id = uuid.uuid4()
     mock_wallet_repository.get_wallet_balance_cent = AsyncMock(return_value=10000)
 
-    response = await client.get(f"{base_url}/{wallet_id}")
+    response = await client.get(f"{base_url}/{wallet_id}", headers=auth_headers)
 
     assert response.status_code == 200
     assert response.json() == {"balance_rub": 100.0}
@@ -25,7 +30,7 @@ async def test_get_wallet_balance_not_found(client, mock_wallet_repository):
     wallet_id = uuid.uuid4()
     mock_wallet_repository.get_wallet_balance_cent = AsyncMock(return_value=None)
 
-    response = await client.get(f"{base_url}/{wallet_id}")
+    response = await client.get(f"{base_url}/{wallet_id}", headers=auth_headers)
 
     assert response.status_code == 404
     assert response.json()["detail"] == "Wallet not found"
@@ -40,6 +45,7 @@ async def test_wallet_deposit_success(client, mock_wallet_repository):
 
     response = await client.post(
         f"{base_url}/{wallet_id}/operation",
+        headers=auth_headers,
         json={"amount": 50.0, "operation_type": "DEPOSIT"},
     )
 
@@ -65,6 +71,7 @@ async def test_wallet_withdrawal_success(client, mock_wallet_repository):
 
     response = await client.post(
         f"{base_url}/{wallet_id}/operation",
+        headers=auth_headers,
         json={"amount": 50.0, "operation_type": "WITHDRAWAL"},
     )
 
@@ -88,6 +95,7 @@ async def test_wallet_withdrawal_insufficient_balance(client, mock_wallet_reposi
 
     response = await client.post(
         f"{base_url}/{wallet_id}/operation",
+        headers=auth_headers,
         json={"amount": 50.0, "operation_type": "WITHDRAWAL"},
     )
 
@@ -99,6 +107,7 @@ async def test_wallet_operation_invalid_amount(client, mock_wallet_repository):
     wallet_id = uuid.uuid4()
     response = await client.post(
         f"{base_url}/{wallet_id}/operation",
+        headers=auth_headers,
         json={"amount": -10.0, "operation_type": "DEPOSIT"},
     )
 
@@ -113,6 +122,7 @@ async def test_wallet_operation_invalid_amount_decimal_places(
     wallet_id = uuid.uuid4()
     response = await client.post(
         f"{base_url}/{wallet_id}/operation",
+        headers=auth_headers,
         json={"amount": 10.123, "operation_type": "DEPOSIT"},
     )
 
@@ -124,8 +134,30 @@ async def test_wallet_operation_invalid_operation_type(client, mock_wallet_repos
     wallet_id = uuid.uuid4()
     response = await client.post(
         f"{base_url}/{wallet_id}/operation",
+        headers=auth_headers,
         json={"amount": 10.0, "operation_type": "INVALID"},
     )
 
     assert response.status_code == 422
     assert response.json()["detail"][0]["type"] == "enum"
+
+
+async def test_get_wallet_requires_trusted_identity_headers(client):
+    wallet_id = uuid.uuid4()
+
+    response = await client.get(f"{base_url}/{wallet_id}")
+
+    assert response.status_code == 401
+    assert response.json() == {"detail": "Missing trusted user id header"}
+
+
+async def test_wallet_operation_requires_trusted_identity_headers(client):
+    wallet_id = uuid.uuid4()
+
+    response = await client.post(
+        f"{base_url}/{wallet_id}/operation",
+        json={"amount": 10.0, "operation_type": "DEPOSIT"},
+    )
+
+    assert response.status_code == 401
+    assert response.json() == {"detail": "Missing trusted user id header"}

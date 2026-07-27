@@ -1,7 +1,7 @@
 import uuid
 
 from dishka.integrations.fastapi import DishkaRoute, FromDishka
-from fastapi import APIRouter
+from fastapi import APIRouter, Request
 
 from wallet_service.application.commands.apply_wallet_operation import (
     ApplyWalletOperationInput,
@@ -10,6 +10,7 @@ from wallet_service.application.commands.apply_wallet_operation import (
 from wallet_service.application.queries.get_wallet_balance import (
     GetWalletBalanceInteractor,
 )
+from wallet_service.presentation.api.identity import HTTPIdentityProvider
 from wallet_service.presentation.api.schemas import (
     WalletBalanceResponse,
     WalletOperationRequest,
@@ -25,8 +26,10 @@ router = APIRouter(prefix="/api/v1", tags=["Wallet"], route_class=DishkaRoute)
 )
 async def get_wallet(
     wallet_id: uuid.UUID,
+    request: Request,
     interactor: FromDishka[GetWalletBalanceInteractor],
 ) -> WalletBalanceResponse:
+    await HTTPIdentityProvider(request).get_current_user()
     balance_rub = await interactor.execute(wallet_id)
     return WalletBalanceResponse(balance_rub=balance_rub)
 
@@ -39,9 +42,11 @@ async def get_wallet(
 )
 async def wallet_operation(
     wallet_id: uuid.UUID,
+    http_request: Request,
     request: WalletOperationRequest,
     interactor: FromDishka[ApplyWalletOperationInteractor],
 ) -> WalletBalanceResponse:
+    await HTTPIdentityProvider(http_request).get_current_user()
     balance_rub = await interactor.execute(
         ApplyWalletOperationInput(
             wallet_id=wallet_id,

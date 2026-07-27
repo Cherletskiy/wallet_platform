@@ -10,12 +10,7 @@ async def run_migrations():
         project_dir = Path(__file__).resolve().parents[4]
         alembic_ini = project_dir / "alembic.ini"
         alembic_folder = (
-            project_dir
-            / "src"
-            / "wallet_service"
-            / "infrastructure"
-            / "sa"
-            / "alembic"
+            project_dir / "src" / "wallet_service" / "infrastructure" / "sa" / "alembic"
         )
 
         alembic_cfg = Config(str(alembic_ini))
