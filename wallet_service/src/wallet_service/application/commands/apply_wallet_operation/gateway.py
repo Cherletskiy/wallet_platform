@@ -5,6 +5,8 @@ from wallet_service.domain.wallet import OperationType, Wallet
 
 
 class WalletCommandGateway(Protocol):
+    async def create_wallet(self, owner_user_id: uuid.UUID) -> Wallet: ...
+
     async def get_wallet_by_id(
         self,
         wallet_id: uuid.UUID,

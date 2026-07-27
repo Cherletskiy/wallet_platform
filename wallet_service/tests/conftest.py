@@ -25,6 +25,9 @@ from wallet_service.application.commands.apply_wallet_operation.gateway import (
 from wallet_service.application.commands.apply_wallet_operation.interactor import (
     ApplyWalletOperationInteractor,
 )
+from wallet_service.application.commands.create_wallet.interactor import (
+    CreateWalletInteractor,
+)
 from wallet_service.application.commands.outbox_processor.interactor import (
     OutboxProcessorInteractor,
 )
@@ -78,6 +81,10 @@ class TestProvider(Provider):
         ApplyWalletOperationInteractor,
         scope=Scope.REQUEST,
     )
+    create_wallet_interactor = provide(
+        CreateWalletInteractor,
+        scope=Scope.REQUEST,
+    )
 
 
 def build_asyncpg_dsn(container: PostgresContainer) -> str:
@@ -125,6 +132,17 @@ def apply_wallet_operation_interactor(
     mock_wallet_unit_of_work.wallets = mock_wallet_repository
     mock_wallet_unit_of_work.outbox = mock_outbox_repository
     return ApplyWalletOperationInteractor(mock_wallet_unit_of_work)
+
+
+@pytest.fixture
+def create_wallet_interactor(
+    mock_wallet_repository: MagicMock,
+    mock_outbox_repository: MagicMock,
+    mock_wallet_unit_of_work: AsyncMock,
+) -> CreateWalletInteractor:
+    mock_wallet_unit_of_work.wallets = mock_wallet_repository
+    mock_wallet_unit_of_work.outbox = mock_outbox_repository
+    return CreateWalletInteractor(mock_wallet_unit_of_work)
 
 
 @pytest.fixture
@@ -181,6 +199,10 @@ async def app(
         )
         apply_wallet_operation_interactor = provide(
             ApplyWalletOperationInteractor,
+            scope=Scope.REQUEST,
+        )
+        create_wallet_interactor = provide(
+            CreateWalletInteractor,
             scope=Scope.REQUEST,
         )
 
@@ -255,6 +277,12 @@ async def wallet(
 ) -> uuid.UUID:
     wallet_id = uuid.uuid4()
     async with test_db() as session:
-        session.add(WalletModel(id=wallet_id, balance_cent=10000))
+        session.add(
+            WalletModel(
+                id=wallet_id,
+                owner_user_id=uuid.UUID("11111111-1111-1111-1111-111111111111"),
+                balance_cent=10000,
+            )
+        )
         await session.commit()
     return wallet_id

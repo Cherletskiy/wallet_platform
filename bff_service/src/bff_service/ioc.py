@@ -3,6 +3,9 @@ from dishka import Provider, Scope, provide
 from bff_service.application.commands.apply_wallet_operation.interactor import (
     ApplyWalletOperationInteractor,
 )
+from bff_service.application.commands.create_wallet.interactor import (
+    CreateWalletInteractor,
+)
 from bff_service.application.commands.proxy_auth.interactor import ProxyAuthInteractor
 from bff_service.application.common.identity import IdentityService
 from bff_service.application.queries.get_wallet_balance.interactor import (
@@ -28,5 +31,9 @@ class MainProvider(Provider):
     )
     apply_wallet_operation_interactor = provide(
         ApplyWalletOperationInteractor,
+        scope=Scope.REQUEST,
+    )
+    create_wallet_interactor = provide(
+        CreateWalletInteractor,
         scope=Scope.REQUEST,
     )

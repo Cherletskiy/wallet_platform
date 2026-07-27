@@ -7,6 +7,10 @@ from wallet_service.application.commands.apply_wallet_operation import (
     ApplyWalletOperationInput,
     ApplyWalletOperationInteractor,
 )
+from wallet_service.application.commands.create_wallet import (
+    CreateWalletInput,
+    CreateWalletInteractor,
+)
 from wallet_service.application.queries.get_wallet_balance import (
     GetWalletBalanceInteractor,
 )
@@ -14,9 +18,25 @@ from wallet_service.presentation.api.identity import HTTPIdentityProvider
 from wallet_service.presentation.api.schemas import (
     WalletBalanceResponse,
     WalletOperationRequest,
+    WalletResponse,
 )
 
 router = APIRouter(prefix="/api/v1", tags=["Wallet"], route_class=DishkaRoute)
+
+
+@router.post(
+    "/wallets",
+    response_model=WalletResponse,
+    status_code=201,
+    summary="Создание нового кошелька для текущего пользователя",
+)
+async def create_wallet(
+    request: Request,
+    interactor: FromDishka[CreateWalletInteractor],
+) -> WalletResponse:
+    current_user = await HTTPIdentityProvider(request).get_current_user()
+    wallet = await interactor.execute(CreateWalletInput(current_user.user_id))
+    return WalletResponse(wallet_id=str(wallet.id), balance_rub=0.0)
 
 
 @router.get(
@@ -29,8 +49,8 @@ async def get_wallet(
     request: Request,
     interactor: FromDishka[GetWalletBalanceInteractor],
 ) -> WalletBalanceResponse:
-    await HTTPIdentityProvider(request).get_current_user()
-    balance_rub = await interactor.execute(wallet_id)
+    current_user = await HTTPIdentityProvider(request).get_current_user()
+    balance_rub = await interactor.execute(wallet_id, current_user.user_id)
     return WalletBalanceResponse(balance_rub=balance_rub)
 
 
@@ -46,12 +66,13 @@ async def wallet_operation(
     request: WalletOperationRequest,
     interactor: FromDishka[ApplyWalletOperationInteractor],
 ) -> WalletBalanceResponse:
-    await HTTPIdentityProvider(http_request).get_current_user()
+    current_user = await HTTPIdentityProvider(http_request).get_current_user()
     balance_rub = await interactor.execute(
         ApplyWalletOperationInput(
             wallet_id=wallet_id,
             amount_cent=int((request.amount * 100).to_integral_value()),
             operation_type=request.operation_type,
-        )
+        ),
+        current_user.user_id,
     )
     return WalletBalanceResponse(balance_rub=balance_rub)

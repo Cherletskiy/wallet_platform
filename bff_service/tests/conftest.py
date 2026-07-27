@@ -13,6 +13,9 @@ from bff_service import create_app
 from bff_service.application.commands.apply_wallet_operation.interactor import (
     ApplyWalletOperationInteractor,
 )
+from bff_service.application.commands.create_wallet.interactor import (
+    CreateWalletInteractor,
+)
 from bff_service.application.commands.proxy_auth.interactor import ProxyAuthInteractor
 from bff_service.application.common.identity import IdentityService
 from bff_service.application.queries.get_wallet_balance.interactor import (
@@ -54,6 +57,23 @@ class StubGateway(DownstreamGateway):
         }
         return ProxyResponse(status_code=200, body={"balance_rub": 100.0}, headers={})
 
+    async def create_wallet(
+        self,
+        *,
+        headers: dict[str, str],
+    ) -> ProxyResponse:
+        self.last_call = {
+            "headers": headers,
+        }
+        return ProxyResponse(
+            status_code=201,
+            body={
+                "wallet_id": "11111111-1111-1111-1111-111111111111",
+                "balance_rub": 0.0,
+            },
+            headers={},
+        )
+
     async def apply_wallet_operation(
         self,
         *,
@@ -94,6 +114,7 @@ async def app(
             return identity_service
 
         proxy_auth_interactor = provide(ProxyAuthInteractor, scope=Scope.REQUEST)
+        create_wallet_interactor = provide(CreateWalletInteractor, scope=Scope.REQUEST)
         get_wallet_balance_interactor = provide(
             GetWalletBalanceInteractor,
             scope=Scope.REQUEST,

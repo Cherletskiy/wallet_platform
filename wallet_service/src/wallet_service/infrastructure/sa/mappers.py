@@ -15,6 +15,7 @@ def map_operation_model(model: OperationModel) -> Operation:
 def map_wallet_model(model: WalletModel) -> Wallet:
     return Wallet(
         id=model.id,
+        owner_user_id=model.owner_user_id,
         balance_cent=model.balance_cent,
         created_at=model.created_at,
         operations=[],

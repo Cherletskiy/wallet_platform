@@ -9,6 +9,9 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from bff_service.application.commands.apply_wallet_operation.interactor import (
     ApplyWalletOperationInteractor,
 )
+from bff_service.application.commands.create_wallet.interactor import (
+    CreateWalletInteractor,
+)
 from bff_service.application.commands.proxy_auth.interactor import ProxyAuthInteractor
 from bff_service.application.common.identity import (
     IdentityService,
@@ -118,6 +121,24 @@ async def get_wallet(
 
     result = await interactor.execute(
         wallet_id=wallet_id,
+        identity_headers=build_identity_headers(current_user),
+        current_user=current_user,
+    )
+    return to_response(result.status_code, result.body, result.headers)
+
+
+@router.post("/wallets")
+async def create_wallet(
+    identity_service: FromDishka[IdentityService],
+    interactor: FromDishka[CreateWalletInteractor],
+    credentials: HTTPAuthorizationCredentials = Depends(http_bearer),
+) -> Response:
+    try:
+        current_user = identity_service.get_current_user(credentials.credentials)
+    except jwt.PyJWTError:
+        return JSONResponse(status_code=401, content={"detail": "Invalid access token"})
+
+    result = await interactor.execute(
         identity_headers=build_identity_headers(current_user),
         current_user=current_user,
     )

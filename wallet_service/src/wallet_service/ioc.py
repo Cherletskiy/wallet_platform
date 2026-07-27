@@ -10,6 +10,9 @@ from wallet_service.application.commands.apply_wallet_operation.gateway import (
 from wallet_service.application.commands.apply_wallet_operation.interactor import (
     ApplyWalletOperationInteractor,
 )
+from wallet_service.application.commands.create_wallet.interactor import (
+    CreateWalletInteractor,
+)
 from wallet_service.application.commands.outbox_processor.interactor import (
     OutboxProcessorInteractor,
 )
@@ -99,6 +102,10 @@ class MainProvider(Provider):
     )
     apply_wallet_operation_interactor = provide(
         ApplyWalletOperationInteractor,
+        scope=Scope.REQUEST,
+    )
+    create_wallet_interactor = provide(
+        CreateWalletInteractor,
         scope=Scope.REQUEST,
     )
     outbox_processor_interactor = provide(

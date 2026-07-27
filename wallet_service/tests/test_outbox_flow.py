@@ -1,3 +1,5 @@
+import uuid
+
 import pytest
 from sqlalchemy import select
 
@@ -20,6 +22,8 @@ from wallet_service.infrastructure.sa.unit_of_work import (
 
 pytestmark = pytest.mark.asyncio
 
+OWNER_USER_ID = uuid.UUID("11111111-1111-1111-1111-111111111111")
+
 
 async def test_wallet_operation_creates_outbox_event(test_db, wallet):
     wallet_id = wallet
@@ -28,7 +32,8 @@ async def test_wallet_operation_creates_outbox_event(test_db, wallet):
         interactor = ApplyWalletOperationInteractor(SQLAlchemyWalletUnitOfWork(session))
 
         balance = await interactor.execute(
-            ApplyWalletOperationInput(wallet_id, 5000, OperationType.DEPOSIT)
+            ApplyWalletOperationInput(wallet_id, 5000, OperationType.DEPOSIT),
+            OWNER_USER_ID,
         )
         outbox_events = await SQLAlchemyOutboxRepository(session).get_waiting(limit=10)
         outbox_event = await session.get(
@@ -67,7 +72,8 @@ async def test_wallet_operation_rolls_back_if_outbox_write_fails(test_db, wallet
 
         with pytest.raises(WalletOperationError):
             await interactor.execute(
-                ApplyWalletOperationInput(wallet_id, 5000, OperationType.DEPOSIT)
+                ApplyWalletOperationInput(wallet_id, 5000, OperationType.DEPOSIT),
+                OWNER_USER_ID,
             )
 
         wallet_repository = SQLAlchemyWalletRepository(session)

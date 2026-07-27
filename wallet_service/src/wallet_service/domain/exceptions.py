@@ -24,3 +24,7 @@ class WalletOperationError(WalletError):
 
 class AuthorizationError(WalletError):
     pass
+
+
+class WalletAccessDeniedError(WalletError):
+    pass

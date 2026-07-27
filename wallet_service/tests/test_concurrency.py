@@ -1,5 +1,6 @@
 import asyncio
 import random
+import uuid
 
 import pytest
 
@@ -20,6 +21,8 @@ from wallet_service.infrastructure.sa.unit_of_work import (
 
 pytestmark = pytest.mark.asyncio
 
+OWNER_USER_ID = uuid.UUID("11111111-1111-1111-1111-111111111111")
+
 
 async def test_concurrent(test_db, wallet):
     wallet_id = wallet
@@ -35,7 +38,8 @@ async def test_concurrent(test_db, wallet):
             )
             await asyncio.sleep(random.uniform(0.01, 0.1))
             await interactor.execute(
-                ApplyWalletOperationInput(wallet_id, amount, operation_type)
+                ApplyWalletOperationInput(wallet_id, amount, operation_type),
+                OWNER_USER_ID,
             )
 
     tasks = []
@@ -49,7 +53,7 @@ async def test_concurrent(test_db, wallet):
     async with test_db() as session:
         final_balance = await GetWalletBalanceInteractor(
             SQLAlchemyWalletRepository(session)
-        ).execute(wallet_id)
+        ).execute(wallet_id, OWNER_USER_ID)
         expected_balance = (
             100.0
             + (num_deposits * deposit_amount - num_withdrawals * withdrawal_amount)
