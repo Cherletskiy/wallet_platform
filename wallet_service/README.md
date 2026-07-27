@@ -5,12 +5,19 @@
 `wallet_service` is an isolated service inside `wallet_platform`.
 It manages wallet balances, applies `DEPOSIT` and `WITHDRAWAL` operations,
 stores money in cents, and exposes balances in rubles through HTTP API.
+It also publishes wallet transaction events through a transactional outbox.
 
 The service follows a simplified clean architecture approach:
 - `presentation` contains FastAPI routers and schemas
 - `application` contains interactors and ports
 - `domain` contains business entities and domain errors
 - `infrastructure` contains SQLAlchemy, migrations, logging, and DI adapters
+
+At the current stage the service also includes:
+- a transactional outbox stored in PostgreSQL
+- an outbox processor with retry and dead-letter-ready status model
+- a FastStream publisher for `wallet.transaction.created`
+- a Redpanda-based local event broker setup
 
 ## Service structure
 
@@ -79,6 +86,7 @@ uv run python -m wallet_service --reload
 ```bash
 uv run ruff check src tests
 uv run mypy src/wallet_service
+uv run pytest
 ```
 
 ## API
@@ -93,3 +101,5 @@ Swagger UI is available at `http://localhost:8000/docs`.
 - Concurrency is handled with `SELECT FOR UPDATE`
 - The application uses `dishka` for dependency injection
 - Alembic migrations live in `infrastructure/sa/alembic` and run on startup
+- `wallet.transaction.created` is published after the wallet transaction is committed
+- The shared platform setup can be started from [`wallet_platform/docker-compose.yml`](/home/cherletskiy/Projects/UPGARDE/wallet_platform/docker-compose.yml:1)
