@@ -1,3 +1,5 @@
+import uuid
+
 from bff_service.domain.identity import UserContext
 from bff_service.infrastructure.http.gateway import DownstreamGateway, ProxyResponse
 
@@ -11,10 +13,12 @@ class ListNotificationsInteractor:
         *,
         identity_headers: dict[str, str],
         current_user: UserContext,
+        wallet_id: uuid.UUID | None,
         limit: int,
     ) -> ProxyResponse:
         del current_user
         return await self._gateway.get_notifications(
             headers=identity_headers,
+            wallet_id=wallet_id,
             limit=limit,
         )

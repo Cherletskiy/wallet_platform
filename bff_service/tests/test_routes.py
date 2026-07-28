@@ -1,3 +1,5 @@
+import uuid
+
 import jwt
 import pytest
 
@@ -113,9 +115,10 @@ async def test_notifications_list_forwards_identity_headers(
     client, downstream_gateway
 ) -> None:
     token = make_access_token()
+    wallet_id = "33333333-3333-3333-3333-333333333333"
 
     response = await client.get(
-        "/api/v1/notifications?limit=10",
+        f"/api/v1/notifications?wallet_id={wallet_id}&limit=10",
         headers={"Authorization": f"Bearer {token}"},
     )
 
@@ -127,6 +130,7 @@ async def test_notifications_list_forwards_identity_headers(
             "X-User-Roles": "user",
             "X-User-Email-Verified": "true",
         },
+        "wallet_id": uuid.UUID(wallet_id),
         "limit": 10,
     }
 

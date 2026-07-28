@@ -16,11 +16,12 @@ async def test_health_route(client):
 
 
 async def test_list_notifications_route(client, mock_notification_repository):
+    wallet_id = uuid.uuid4()
     notification = Notification(
         id=uuid.uuid4(),
         source_event_id=uuid.uuid4(),
         user_id=uuid.UUID("11111111-1111-1111-1111-111111111111"),
-        wallet_id=uuid.uuid4(),
+        wallet_id=wallet_id,
         operation_type=WalletOperationType.DEPOSIT,
         amount_cent=5000,
         balance_cent=15000,
@@ -29,7 +30,7 @@ async def test_list_notifications_route(client, mock_notification_repository):
     mock_notification_repository.list_recent = AsyncMock(return_value=[notification])
 
     response = await client.get(
-        "/api/v1/notifications?limit=10",
+        f"/api/v1/notifications?wallet_id={wallet_id}&limit=10",
         headers={"X-User-Id": "11111111-1111-1111-1111-111111111111"},
     )
 
@@ -39,6 +40,7 @@ async def test_list_notifications_route(client, mock_notification_repository):
     assert response.json()[0]["balance_rub"] == 150.0
     mock_notification_repository.list_recent.assert_awaited_once_with(
         user_id=uuid.UUID("11111111-1111-1111-1111-111111111111"),
+        wallet_id=wallet_id,
         limit=10,
     )
 

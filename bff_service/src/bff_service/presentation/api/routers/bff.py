@@ -174,6 +174,7 @@ async def list_notifications(
     identity_service: FromDishka[IdentityService],
     interactor: FromDishka[ListNotificationsInteractor],
     credentials: HTTPAuthorizationCredentials = Depends(http_bearer),
+    wallet_id: uuid.UUID | None = Query(default=None),
     limit: int = Query(default=50, ge=1, le=100),
 ) -> Response:
     try:
@@ -184,6 +185,7 @@ async def list_notifications(
     result = await interactor.execute(
         identity_headers=build_identity_headers(current_user),
         current_user=current_user,
+        wallet_id=wallet_id,
         limit=limit,
     )
     return to_response(result.status_code, result.body, result.headers)

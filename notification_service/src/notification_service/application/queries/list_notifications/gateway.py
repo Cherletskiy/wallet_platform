@@ -9,5 +9,6 @@ class NotificationQueryGateway(Protocol):
         self,
         *,
         user_id: uuid.UUID,
+        wallet_id: uuid.UUID | None = None,
         limit: int = 50,
     ) -> list[Notification]: ...

@@ -13,6 +13,11 @@ class ListNotificationsInteractor:
     async def execute(
         self,
         current_user_id: uuid.UUID,
+        wallet_id: uuid.UUID | None = None,
         limit: int = 50,
     ) -> list[Notification]:
-        return await self._gateway.list_recent(user_id=current_user_id, limit=limit)
+        return await self._gateway.list_recent(
+            user_id=current_user_id,
+            wallet_id=wallet_id,
+            limit=limit,
+        )

@@ -1,3 +1,5 @@
+import uuid
+
 from dishka.integrations.fastapi import DishkaRoute, FromDishka
 from fastapi import APIRouter, Query, Request
 
@@ -22,10 +24,11 @@ async def health() -> HealthResponse:
 async def list_notifications(
     request: Request,
     interactor: FromDishka[ListNotificationsInteractor],
+    wallet_id: uuid.UUID | None = Query(default=None),
     limit: int = Query(default=50, ge=1, le=100),
 ) -> list[NotificationResponse]:
     current_user = await HTTPIdentityProvider(request).get_current_user()
-    notifications = await interactor.execute(current_user.user_id, limit)
+    notifications = await interactor.execute(current_user.user_id, wallet_id, limit)
     responses: list[NotificationResponse] = []
     for item in notifications:
         if item.id is None:

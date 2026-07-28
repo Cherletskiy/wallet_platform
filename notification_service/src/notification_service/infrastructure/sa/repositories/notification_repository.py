@@ -46,12 +46,14 @@ class SQLAlchemyNotificationRepository:
         self,
         *,
         user_id: uuid.UUID,
+        wallet_id: uuid.UUID | None = None,
         limit: int = 50,
     ) -> list[Notification]:
+        stmt = select(NotificationModel).where(NotificationModel.user_id == user_id)
+        if wallet_id is not None:
+            stmt = stmt.where(NotificationModel.wallet_id == wallet_id)
+
         rows = await self._session.scalars(
-            select(NotificationModel)
-            .where(NotificationModel.user_id == user_id)
-            .order_by(NotificationModel.created_at.desc())
-            .limit(limit)
+            stmt.order_by(NotificationModel.created_at.desc()).limit(limit)
         )
         return [map_notification_model(item) for item in rows.all()]

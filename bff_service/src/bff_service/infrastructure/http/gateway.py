@@ -76,13 +76,18 @@ class DownstreamGateway:
         self,
         *,
         headers: dict[str, str],
+        wallet_id: uuid.UUID | None,
         limit: int,
     ) -> ProxyResponse:
+        params: dict[str, str | int] = {"limit": limit}
+        if wallet_id is not None:
+            params["wallet_id"] = str(wallet_id)
+
         async with httpx.AsyncClient(timeout=10.0) as client:
             response = await client.get(
                 f"{self._cfg.notification_service_url}/api/v1/notifications",
                 headers=headers,
-                params={"limit": limit},
+                params=params,
             )
         return self._build_proxy_response(response)
 
