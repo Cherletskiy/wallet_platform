@@ -23,6 +23,9 @@ from bff_service.application.queries.get_wallet_balance.interactor import (
 from bff_service.application.queries.list_notifications.interactor import (
     ListNotificationsInteractor,
 )
+from bff_service.application.queries.list_wallets.interactor import (
+    ListWalletsInteractor,
+)
 from bff_service.presentation.api.schemas import (
     HealthResponse,
     LoginRequest,
@@ -124,6 +127,24 @@ async def get_wallet(
 
     result = await interactor.execute(
         wallet_id=wallet_id,
+        identity_headers=build_identity_headers(current_user),
+        current_user=current_user,
+    )
+    return to_response(result.status_code, result.body, result.headers)
+
+
+@router.get("/wallets")
+async def list_wallets(
+    identity_service: FromDishka[IdentityService],
+    interactor: FromDishka[ListWalletsInteractor],
+    credentials: HTTPAuthorizationCredentials = Depends(http_bearer),
+) -> Response:
+    try:
+        current_user = identity_service.get_current_user(credentials.credentials)
+    except jwt.PyJWTError:
+        return JSONResponse(status_code=401, content={"detail": "Invalid access token"})
+
+    result = await interactor.execute(
         identity_headers=build_identity_headers(current_user),
         current_user=current_user,
     )
