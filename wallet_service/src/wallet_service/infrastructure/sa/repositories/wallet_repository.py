@@ -36,6 +36,16 @@ class SQLAlchemyWalletRepository:
             return None
         return map_wallet_model(wallet_model)
 
+    async def list_wallets_by_owner(self, owner_user_id: uuid.UUID) -> list[Wallet]:
+        wallet_models = (
+            await self._session.scalars(
+                select(WalletModel)
+                .where(WalletModel.owner_user_id == owner_user_id)
+                .order_by(WalletModel.created_at.desc())
+            )
+        ).all()
+        return [map_wallet_model(item) for item in wallet_models]
+
     async def update_wallet_balance_cent(
         self,
         wallet_id: uuid.UUID,

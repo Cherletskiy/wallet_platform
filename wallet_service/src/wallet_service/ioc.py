@@ -27,6 +27,9 @@ from wallet_service.application.queries.get_wallet_balance.gateway import (
 from wallet_service.application.queries.get_wallet_balance.interactor import (
     GetWalletBalanceInteractor,
 )
+from wallet_service.application.queries.list_wallets.interactor import (
+    ListWalletsInteractor,
+)
 from wallet_service.application.unit_of_work import WalletUnitOfWork
 from wallet_service.config import config
 from wallet_service.infrastructure.faststream.publisher import (
@@ -98,6 +101,10 @@ class MainProvider(Provider):
     )
     get_wallet_balance_interactor = provide(
         GetWalletBalanceInteractor,
+        scope=Scope.REQUEST,
+    )
+    list_wallets_interactor = provide(
+        ListWalletsInteractor,
         scope=Scope.REQUEST,
     )
     apply_wallet_operation_interactor = provide(

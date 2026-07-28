@@ -35,6 +35,24 @@ async def test_get_wallet_by_id_not_found(test_db):
         assert wallet is None
 
 
+async def test_list_wallets_by_owner_returns_only_owned_wallets(test_db):
+    owner_user_id = uuid.UUID("11111111-1111-1111-1111-111111111111")
+    another_user_id = uuid.UUID("22222222-2222-2222-2222-222222222222")
+
+    async with test_db() as session:
+        wallet_repo = SQLAlchemyWalletRepository(session)
+        first_wallet = await wallet_repo.create_wallet(owner_user_id)
+        second_wallet = await wallet_repo.create_wallet(owner_user_id)
+        await wallet_repo.create_wallet(another_user_id)
+        await session.commit()
+
+        wallets = await wallet_repo.list_wallets_by_owner(owner_user_id)
+
+        assert len(wallets) == 2
+        assert {wallet.id for wallet in wallets} == {first_wallet.id, second_wallet.id}
+        assert all(wallet.owner_user_id == owner_user_id for wallet in wallets)
+
+
 async def test_update_wallet_balance_cent_success(test_db, wallet):
     wallet_id = wallet
     new_balance_cent = 20000

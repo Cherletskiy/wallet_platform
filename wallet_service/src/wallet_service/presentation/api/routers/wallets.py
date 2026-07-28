@@ -14,14 +14,36 @@ from wallet_service.application.commands.create_wallet import (
 from wallet_service.application.queries.get_wallet_balance import (
     GetWalletBalanceInteractor,
 )
+from wallet_service.application.queries.list_wallets import ListWalletsInteractor
 from wallet_service.presentation.api.identity import HTTPIdentityProvider
 from wallet_service.presentation.api.schemas import (
     WalletBalanceResponse,
+    WalletListItemResponse,
     WalletOperationRequest,
     WalletResponse,
 )
 
 router = APIRouter(prefix="/api/v1", tags=["Wallet"], route_class=DishkaRoute)
+
+
+@router.get(
+    "/wallets",
+    response_model=list[WalletListItemResponse],
+    summary="Получение всех кошельков текущего пользователя",
+)
+async def list_wallets(
+    request: Request,
+    interactor: FromDishka[ListWalletsInteractor],
+) -> list[WalletListItemResponse]:
+    current_user = await HTTPIdentityProvider(request).get_current_user()
+    wallets = await interactor.execute(current_user.user_id)
+    return [
+        WalletListItemResponse(
+            wallet_id=str(wallet.id),
+            balance_rub=round(wallet.balance_cent / 100, 2),
+        )
+        for wallet in wallets
+    ]
 
 
 @router.post(

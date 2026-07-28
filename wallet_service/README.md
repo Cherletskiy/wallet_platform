@@ -6,6 +6,8 @@
 It manages wallet balances, applies `DEPOSIT` and `WITHDRAWAL` operations,
 stores money in cents, and exposes balances in rubles through HTTP API.
 It also publishes wallet transaction events through a transactional outbox.
+Wallets are owned by platform users through `owner_user_id`, and private
+wallet endpoints require trusted identity headers from the upstream `BFF`.
 
 The service follows a simplified clean architecture approach:
 - `presentation` contains FastAPI routers and schemas
@@ -18,6 +20,7 @@ At the current stage the service also includes:
 - an outbox processor with retry and dead-letter-ready status model
 - a FastStream publisher for `wallet.transaction.created`
 - a Redpanda-based local event broker setup
+- wallet ownership and access checks by current user
 
 ## Service structure
 
@@ -91,15 +94,34 @@ uv run pytest
 
 ## API
 
+- `GET /api/v1/wallets` returns all wallets of the current user
+- `POST /api/v1/wallets` creates a new wallet for the current user
 - `GET /api/v1/wallets/{wallet_id}` returns the current balance in rubles
 - `POST /api/v1/wallets/{wallet_id}/operation` applies `DEPOSIT` or `WITHDRAWAL`
 
 Swagger UI is available at `http://localhost:8000/docs`.
+
+All private wallet endpoints expect trusted headers:
+- `X-User-Id`
+- `X-User-Roles`
+- `X-User-Email-Verified`
+
+In the shared platform setup these headers are supplied by `bff_service`.
+
+## Example flow
+
+1. Create a wallet for the current user with `POST /api/v1/wallets`
+2. Fetch all owned wallets with `GET /api/v1/wallets`
+3. Read one wallet balance with `GET /api/v1/wallets/{wallet_id}`
+4. Apply `DEPOSIT` or `WITHDRAWAL`
+5. `wallet.transaction.created` is written to outbox in the same transaction
+6. The outbox processor publishes the event to Redpanda
 
 ## Notes
 
 - Concurrency is handled with `SELECT FOR UPDATE`
 - The application uses `dishka` for dependency injection
 - Alembic migrations live in `infrastructure/sa/alembic` and run on startup
+- `wallet.transaction.created` includes both `user_id` and `wallet_id`
 - `wallet.transaction.created` is published after the wallet transaction is committed
 - The shared platform setup can be started from [`wallet_platform/docker-compose.yml`](/home/cherletskiy/Projects/UPGARDE/wallet_platform/docker-compose.yml:1)

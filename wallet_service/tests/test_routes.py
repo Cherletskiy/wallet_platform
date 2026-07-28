@@ -32,6 +32,33 @@ async def test_get_wallet_balance_success(client, mock_wallet_repository):
     mock_wallet_repository.get_wallet_by_id.assert_called_once()
 
 
+async def test_list_wallets_success(client, mock_wallet_repository):
+    first_wallet = Wallet(
+        id=uuid.uuid4(),
+        owner_user_id=uuid.UUID("11111111-1111-1111-1111-111111111111"),
+        balance_cent=10000,
+    )
+    second_wallet = Wallet(
+        id=uuid.uuid4(),
+        owner_user_id=uuid.UUID("11111111-1111-1111-1111-111111111111"),
+        balance_cent=2500,
+    )
+    mock_wallet_repository.list_wallets_by_owner = AsyncMock(
+        return_value=[first_wallet, second_wallet]
+    )
+
+    response = await client.get(base_url, headers=auth_headers)
+
+    assert response.status_code == 200
+    assert response.json() == [
+        {"wallet_id": str(first_wallet.id), "balance_rub": 100.0},
+        {"wallet_id": str(second_wallet.id), "balance_rub": 25.0},
+    ]
+    mock_wallet_repository.list_wallets_by_owner.assert_awaited_once_with(
+        uuid.UUID("11111111-1111-1111-1111-111111111111")
+    )
+
+
 async def test_get_wallet_balance_not_found(client, mock_wallet_repository):
     wallet_id = uuid.uuid4()
     mock_wallet_repository.get_wallet_by_id = AsyncMock(return_value=None)
@@ -164,6 +191,13 @@ async def test_get_wallet_requires_trusted_identity_headers(client):
     wallet_id = uuid.uuid4()
 
     response = await client.get(f"{base_url}/{wallet_id}")
+
+    assert response.status_code == 401
+    assert response.json() == {"detail": "Missing trusted user id header"}
+
+
+async def test_list_wallets_requires_trusted_identity_headers(client):
+    response = await client.get(base_url)
 
     assert response.status_code == 401
     assert response.json() == {"detail": "Missing trusted user id header"}
