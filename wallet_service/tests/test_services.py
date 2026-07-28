@@ -14,6 +14,7 @@ from wallet_service.application.commands.create_wallet import (
 from wallet_service.application.queries.get_wallet_balance import (
     GetWalletBalanceInteractor,
 )
+from wallet_service.application.queries.list_wallets import ListWalletsInteractor
 from wallet_service.domain.exceptions import (
     InsufficientFundsError,
     InvalidAmountError,
@@ -47,6 +48,23 @@ async def test_get_wallet_balance_rub_success(
 
     assert balance == 100.0
     mock_wallet_repository.get_wallet_by_id.assert_called_once()
+
+
+async def test_list_wallets_returns_current_user_wallets(
+    list_wallets_interactor: ListWalletsInteractor,
+    mock_wallet_repository,
+):
+    owner_user_id = uuid.UUID("11111111-1111-1111-1111-111111111111")
+    owned_wallets = [
+        Wallet(id=uuid.uuid4(), owner_user_id=owner_user_id, balance_cent=10000),
+        Wallet(id=uuid.uuid4(), owner_user_id=owner_user_id, balance_cent=2500),
+    ]
+    mock_wallet_repository.list_wallets_by_owner = AsyncMock(return_value=owned_wallets)
+
+    result = await list_wallets_interactor.execute(owner_user_id)
+
+    assert result == owned_wallets
+    mock_wallet_repository.list_wallets_by_owner.assert_awaited_once_with(owner_user_id)
 
 
 async def test_get_wallet_balance_rub_not_found(
@@ -190,6 +208,18 @@ async def test_get_wallet_balance_rub_repository_exception(
 
     with pytest.raises(WalletBalanceError):
         await get_wallet_balance_interactor.execute(wallet_id, uuid.uuid4())
+
+
+async def test_list_wallets_repository_exception(
+    list_wallets_interactor: ListWalletsInteractor,
+    mock_wallet_repository,
+):
+    mock_wallet_repository.list_wallets_by_owner = AsyncMock(
+        side_effect=Exception("Repository error")
+    )
+
+    with pytest.raises(WalletBalanceError):
+        await list_wallets_interactor.execute(uuid.uuid4())
 
 
 async def test_update_wallet_balance_cent_general_exception(

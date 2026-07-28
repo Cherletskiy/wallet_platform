@@ -41,6 +41,9 @@ from wallet_service.application.queries.get_wallet_balance.gateway import (
 from wallet_service.application.queries.get_wallet_balance.interactor import (
     GetWalletBalanceInteractor,
 )
+from wallet_service.application.queries.list_wallets.interactor import (
+    ListWalletsInteractor,
+)
 from wallet_service.application.unit_of_work import WalletUnitOfWork
 from wallet_service.infrastructure.sa.models import Base, WalletModel
 from wallet_service.infrastructure.sa.repositories.outbox_repository import (
@@ -124,6 +127,13 @@ def get_wallet_balance_interactor(
 
 
 @pytest.fixture
+def list_wallets_interactor(
+    mock_wallet_repository: MagicMock,
+) -> ListWalletsInteractor:
+    return ListWalletsInteractor(mock_wallet_repository)
+
+
+@pytest.fixture
 def apply_wallet_operation_interactor(
     mock_wallet_repository: MagicMock,
     mock_outbox_repository: MagicMock,
@@ -195,6 +205,10 @@ async def app(
 
         get_wallet_balance_interactor = provide(
             GetWalletBalanceInteractor,
+            scope=Scope.REQUEST,
+        )
+        list_wallets_interactor = provide(
+            ListWalletsInteractor,
             scope=Scope.REQUEST,
         )
         apply_wallet_operation_interactor = provide(
