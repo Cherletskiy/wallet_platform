@@ -64,6 +64,7 @@ class ApplyWalletOperationInteractor:
                     aggregate_id=data.wallet_id,
                     event_type="wallet.transaction.created",
                     payload={
+                        "user_id": str(current_user_id),
                         "wallet_id": str(data.wallet_id),
                         "operation_type": data.operation_type.value,
                         "amount_cent": data.amount_cent,

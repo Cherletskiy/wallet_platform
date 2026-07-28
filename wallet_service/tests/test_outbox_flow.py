@@ -48,6 +48,7 @@ async def test_wallet_operation_creates_outbox_event(test_db, wallet):
         assert outbox_event.aggregate_id == wallet_id
         assert outbox_event.event_type == "wallet.transaction.created"
         assert outbox_event.payload == {
+            "user_id": str(OWNER_USER_ID),
             "wallet_id": str(wallet_id),
             "operation_type": "DEPOSIT",
             "amount_cent": 5000,

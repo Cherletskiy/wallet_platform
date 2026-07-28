@@ -1,9 +1,10 @@
 from dishka.integrations.fastapi import DishkaRoute, FromDishka
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Query, Request
 
 from notification_service.application.queries.list_notifications import (
     ListNotificationsInteractor,
 )
+from notification_service.presentation.api.identity import HTTPIdentityProvider
 from notification_service.presentation.api.schemas import (
     HealthResponse,
     NotificationResponse,
@@ -19,10 +20,12 @@ async def health() -> HealthResponse:
 
 @router.get("/notifications", response_model=list[NotificationResponse])
 async def list_notifications(
+    request: Request,
     interactor: FromDishka[ListNotificationsInteractor],
     limit: int = Query(default=50, ge=1, le=100),
 ) -> list[NotificationResponse]:
-    notifications = await interactor.execute(limit)
+    current_user = await HTTPIdentityProvider(request).get_current_user()
+    notifications = await interactor.execute(current_user.user_id, limit)
     responses: list[NotificationResponse] = []
     for item in notifications:
         if item.id is None:
@@ -31,6 +34,7 @@ async def list_notifications(
             NotificationResponse(
                 id=item.id,
                 source_event_id=item.source_event_id,
+                user_id=item.user_id,
                 wallet_id=item.wallet_id,
                 operation_type=item.operation_type,
                 amount_rub=round(item.amount_cent / 100, 2),

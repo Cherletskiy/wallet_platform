@@ -19,6 +19,7 @@ async def test_list_notifications_route(client, mock_notification_repository):
     notification = Notification(
         id=uuid.uuid4(),
         source_event_id=uuid.uuid4(),
+        user_id=uuid.UUID("11111111-1111-1111-1111-111111111111"),
         wallet_id=uuid.uuid4(),
         operation_type=WalletOperationType.DEPOSIT,
         amount_cent=5000,
@@ -27,9 +28,23 @@ async def test_list_notifications_route(client, mock_notification_repository):
     )
     mock_notification_repository.list_recent = AsyncMock(return_value=[notification])
 
-    response = await client.get("/api/v1/notifications?limit=10")
+    response = await client.get(
+        "/api/v1/notifications?limit=10",
+        headers={"X-User-Id": "11111111-1111-1111-1111-111111111111"},
+    )
 
     assert response.status_code == 200
     assert response.json()[0]["operation_type"] == "DEPOSIT"
     assert response.json()[0]["amount_rub"] == 50.0
     assert response.json()[0]["balance_rub"] == 150.0
+    mock_notification_repository.list_recent.assert_awaited_once_with(
+        user_id=uuid.UUID("11111111-1111-1111-1111-111111111111"),
+        limit=10,
+    )
+
+
+async def test_list_notifications_route_requires_identity_header(client):
+    response = await client.get("/api/v1/notifications?limit=10")
+
+    assert response.status_code == 401
+    assert response.json() == {"detail": "Missing trusted user id header"}

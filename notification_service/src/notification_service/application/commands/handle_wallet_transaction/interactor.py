@@ -37,6 +37,7 @@ class HandleWalletTransactionInteractor:
             await self._uow.notifications.add(
                 Notification(
                     source_event_id=data.source_event_id,
+                    user_id=data.user_id,
                     wallet_id=data.wallet_id,
                     operation_type=data.operation_type,
                     amount_cent=data.amount_cent,

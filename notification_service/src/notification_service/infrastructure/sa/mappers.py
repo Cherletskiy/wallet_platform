@@ -6,6 +6,7 @@ def map_notification_model(model: NotificationModel) -> Notification:
     return Notification(
         id=model.id,
         source_event_id=model.source_event_id,
+        user_id=model.user_id,
         wallet_id=model.wallet_id,
         operation_type=model.operation_type,
         amount_cent=model.amount_cent,

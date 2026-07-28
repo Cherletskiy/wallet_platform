@@ -11,6 +11,9 @@ from bff_service.application.common.identity import IdentityService
 from bff_service.application.queries.get_wallet_balance.interactor import (
     GetWalletBalanceInteractor,
 )
+from bff_service.application.queries.list_notifications.interactor import (
+    ListNotificationsInteractor,
+)
 from bff_service.config import config
 from bff_service.infrastructure.http.gateway import DownstreamGateway
 
@@ -35,5 +38,9 @@ class MainProvider(Provider):
     )
     create_wallet_interactor = provide(
         CreateWalletInteractor,
+        scope=Scope.REQUEST,
+    )
+    list_notifications_interactor = provide(
+        ListNotificationsInteractor,
         scope=Scope.REQUEST,
     )

@@ -2,7 +2,7 @@ import uuid
 
 import jwt
 from dishka.integrations.fastapi import DishkaRoute, FromDishka
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from fastapi.responses import JSONResponse, Response
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
@@ -19,6 +19,9 @@ from bff_service.application.common.identity import (
 )
 from bff_service.application.queries.get_wallet_balance.interactor import (
     GetWalletBalanceInteractor,
+)
+from bff_service.application.queries.list_notifications.interactor import (
+    ListNotificationsInteractor,
 )
 from bff_service.presentation.api.schemas import (
     HealthResponse,
@@ -141,6 +144,26 @@ async def create_wallet(
     result = await interactor.execute(
         identity_headers=build_identity_headers(current_user),
         current_user=current_user,
+    )
+    return to_response(result.status_code, result.body, result.headers)
+
+
+@router.get("/notifications")
+async def list_notifications(
+    identity_service: FromDishka[IdentityService],
+    interactor: FromDishka[ListNotificationsInteractor],
+    credentials: HTTPAuthorizationCredentials = Depends(http_bearer),
+    limit: int = Query(default=50, ge=1, le=100),
+) -> Response:
+    try:
+        current_user = identity_service.get_current_user(credentials.credentials)
+    except jwt.PyJWTError:
+        return JSONResponse(status_code=401, content={"detail": "Invalid access token"})
+
+    result = await interactor.execute(
+        identity_headers=build_identity_headers(current_user),
+        current_user=current_user,
+        limit=limit,
     )
     return to_response(result.status_code, result.body, result.headers)
 

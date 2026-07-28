@@ -16,10 +16,12 @@ pytestmark = pytest.mark.asyncio
 
 async def test_process_wallet_transaction_message_persists_notification(test_db):
     source_event_id = uuid.uuid4()
+    user_id = uuid.uuid4()
     wallet_id = uuid.uuid4()
 
     created = await process_wallet_transaction_message(
         WalletTransactionCreatedMessage(
+            user_id=user_id,
             wallet_id=wallet_id,
             operation_type=WalletOperationType.DEPOSIT,
             amount_cent=5000,
@@ -35,6 +37,7 @@ async def test_process_wallet_transaction_message_persists_notification(test_db)
 async def test_handle_wallet_transaction_input_shape() -> None:
     payload = HandleWalletTransactionInput(
         source_event_id=uuid.uuid4(),
+        user_id=uuid.uuid4(),
         wallet_id=uuid.uuid4(),
         operation_type=WalletOperationType.WITHDRAWAL,
         amount_cent=1000,

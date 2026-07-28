@@ -21,6 +21,7 @@ logger = setup_logger(__name__)
 
 
 class WalletTransactionCreatedMessage(BaseModel):
+    user_id: uuid.UUID
     wallet_id: uuid.UUID
     operation_type: WalletOperationType
     amount_cent: int
@@ -46,6 +47,7 @@ async def process_wallet_transaction_message(
         return await interactor.execute(
             HandleWalletTransactionInput(
                 source_event_id=source_event_id,
+                user_id=message.user_id,
                 wallet_id=message.wallet_id,
                 operation_type=message.operation_type,
                 amount_cent=message.amount_cent,

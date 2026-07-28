@@ -13,6 +13,7 @@ class HealthResponse(BaseModel):
 class NotificationResponse(BaseModel):
     id: uuid.UUID
     source_event_id: uuid.UUID
+    user_id: uuid.UUID
     wallet_id: uuid.UUID
     operation_type: WalletOperationType
     amount_rub: float

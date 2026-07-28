@@ -9,6 +9,7 @@ load_dotenv()
 @dataclass(slots=True)
 class Config:
     auth_service_url: str
+    notification_service_url: str
     wallet_service_url: str
     jwt_secret_key: str
 
@@ -16,6 +17,10 @@ class Config:
     def from_env(cls) -> "Config":
         return cls(
             auth_service_url=os.getenv("AUTH_SERVICE_URL", "http://localhost:8002"),
+            notification_service_url=os.getenv(
+                "NOTIFICATION_SERVICE_URL",
+                "http://localhost:8001",
+            ),
             wallet_service_url=os.getenv(
                 "WALLET_SERVICE_URL",
                 "http://localhost:8000",

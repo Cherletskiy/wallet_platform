@@ -25,6 +25,7 @@ async def test_handle_wallet_transaction_creates_notification(
     mock_notification_unit_of_work,
 ):
     source_event_id = uuid.uuid4()
+    user_id = uuid.uuid4()
     wallet_id = uuid.uuid4()
     mock_notification_repository.get_by_source_event_id = AsyncMock(return_value=None)
     mock_notification_repository.add = AsyncMock(return_value=None)
@@ -32,6 +33,7 @@ async def test_handle_wallet_transaction_creates_notification(
     created = await handle_wallet_transaction_interactor.execute(
         HandleWalletTransactionInput(
             source_event_id=source_event_id,
+            user_id=user_id,
             wallet_id=wallet_id,
             operation_type=WalletOperationType.DEPOSIT,
             amount_cent=5000,
@@ -43,6 +45,7 @@ async def test_handle_wallet_transaction_creates_notification(
     mock_notification_repository.add.assert_awaited_once()
     stored = mock_notification_repository.add.await_args.args[0]
     assert stored.source_event_id == source_event_id
+    assert stored.user_id == user_id
     assert stored.wallet_id == wallet_id
     assert stored.operation_type == WalletOperationType.DEPOSIT
     assert stored.message == "Deposit received: 50.00 RUB. Current balance: 150.00 RUB."
@@ -56,6 +59,7 @@ async def test_handle_wallet_transaction_is_idempotent(
     mock_notification_repository.get_by_source_event_id = AsyncMock(
         return_value=Notification(
             source_event_id=uuid.uuid4(),
+            user_id=uuid.uuid4(),
             wallet_id=uuid.uuid4(),
             operation_type=WalletOperationType.DEPOSIT,
             amount_cent=1000,
@@ -67,6 +71,7 @@ async def test_handle_wallet_transaction_is_idempotent(
     created = await handle_wallet_transaction_interactor.execute(
         HandleWalletTransactionInput(
             source_event_id=uuid.uuid4(),
+            user_id=uuid.uuid4(),
             wallet_id=uuid.uuid4(),
             operation_type=WalletOperationType.DEPOSIT,
             amount_cent=5000,
@@ -84,6 +89,7 @@ async def test_handle_wallet_transaction_invalid_amount(
         await handle_wallet_transaction_interactor.execute(
             HandleWalletTransactionInput(
                 source_event_id=uuid.uuid4(),
+                user_id=uuid.uuid4(),
                 wallet_id=uuid.uuid4(),
                 operation_type=WalletOperationType.WITHDRAWAL,
                 amount_cent=0,
@@ -104,6 +110,7 @@ async def test_handle_wallet_transaction_rolls_back_on_error(
         await handle_wallet_transaction_interactor.execute(
             HandleWalletTransactionInput(
                 source_event_id=uuid.uuid4(),
+                user_id=uuid.uuid4(),
                 wallet_id=uuid.uuid4(),
                 operation_type=WalletOperationType.WITHDRAWAL,
                 amount_cent=1000,
@@ -120,6 +127,7 @@ async def test_list_notifications_returns_gateway_result(
 ):
     notification = Notification(
         source_event_id=uuid.uuid4(),
+        user_id=uuid.UUID("11111111-1111-1111-1111-111111111111"),
         wallet_id=uuid.uuid4(),
         operation_type=WalletOperationType.DEPOSIT,
         amount_cent=1000,
@@ -128,7 +136,13 @@ async def test_list_notifications_returns_gateway_result(
     )
     mock_notification_repository.list_recent = AsyncMock(return_value=[notification])
 
-    result = await list_notifications_interactor.execute(limit=10)
+    result = await list_notifications_interactor.execute(
+        uuid.UUID("11111111-1111-1111-1111-111111111111"),
+        limit=10,
+    )
 
     assert result == [notification]
-    mock_notification_repository.list_recent.assert_awaited_once_with(10)
+    mock_notification_repository.list_recent.assert_awaited_once_with(
+        user_id=uuid.UUID("11111111-1111-1111-1111-111111111111"),
+        limit=10,
+    )

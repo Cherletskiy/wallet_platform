@@ -21,6 +21,9 @@ from bff_service.application.common.identity import IdentityService
 from bff_service.application.queries.get_wallet_balance.interactor import (
     GetWalletBalanceInteractor,
 )
+from bff_service.application.queries.list_notifications.interactor import (
+    ListNotificationsInteractor,
+)
 from bff_service.config import config
 from bff_service.infrastructure.http.gateway import DownstreamGateway, ProxyResponse
 
@@ -74,6 +77,37 @@ class StubGateway(DownstreamGateway):
             headers={},
         )
 
+    async def get_notifications(
+        self,
+        *,
+        headers: dict[str, str],
+        limit: int,
+    ) -> ProxyResponse:
+        self.last_call = {
+            "headers": headers,
+            "limit": limit,
+        }
+        return ProxyResponse(
+            status_code=200,
+            body=[
+                {
+                    "id": "11111111-1111-1111-1111-111111111111",
+                    "source_event_id": "22222222-2222-2222-2222-222222222222",
+                    "user_id": "11111111-1111-1111-1111-111111111111",
+                    "wallet_id": "33333333-3333-3333-3333-333333333333",
+                    "operation_type": "DEPOSIT",
+                    "amount_rub": 100.0,
+                    "balance_rub": 100.0,
+                    "message": (
+                        "Deposit received: 100.00 RUB. "
+                        "Current balance: 100.00 RUB."
+                    ),
+                    "created_at": None,
+                }
+            ],
+            headers={},
+        )
+
     async def apply_wallet_operation(
         self,
         *,
@@ -117,6 +151,10 @@ async def app(
         create_wallet_interactor = provide(CreateWalletInteractor, scope=Scope.REQUEST)
         get_wallet_balance_interactor = provide(
             GetWalletBalanceInteractor,
+            scope=Scope.REQUEST,
+        )
+        list_notifications_interactor = provide(
+            ListNotificationsInteractor,
             scope=Scope.REQUEST,
         )
         apply_wallet_operation_interactor = provide(

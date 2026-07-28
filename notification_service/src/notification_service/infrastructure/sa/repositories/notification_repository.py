@@ -33,6 +33,7 @@ class SQLAlchemyNotificationRepository:
         self._session.add(
             NotificationModel(
                 source_event_id=notification.source_event_id,
+                user_id=notification.user_id,
                 wallet_id=notification.wallet_id,
                 operation_type=notification.operation_type,
                 amount_cent=notification.amount_cent,
@@ -41,9 +42,15 @@ class SQLAlchemyNotificationRepository:
             )
         )
 
-    async def list_recent(self, limit: int = 50) -> list[Notification]:
+    async def list_recent(
+        self,
+        *,
+        user_id: uuid.UUID,
+        limit: int = 50,
+    ) -> list[Notification]:
         rows = await self._session.scalars(
             select(NotificationModel)
+            .where(NotificationModel.user_id == user_id)
             .order_by(NotificationModel.created_at.desc())
             .limit(limit)
         )

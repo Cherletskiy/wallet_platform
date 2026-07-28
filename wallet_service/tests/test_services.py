@@ -97,6 +97,7 @@ async def test_update_wallet_balance_deposit_success(
     assert outbox_event.status.value == "PENDING"
     assert outbox_event.retry_count == 0
     assert outbox_event.payload == {
+        "user_id": "11111111-1111-1111-1111-111111111111",
         "wallet_id": str(wallet_id),
         "operation_type": "DEPOSIT",
         "amount_cent": 5000,

@@ -42,6 +42,7 @@ from notification_service.infrastructure.sa.unit_of_work import (
 )
 
 POSTGRES_IMAGE = "postgres:15.17-trixie"
+OWNER_USER_ID = uuid.UUID("11111111-1111-1111-1111-111111111111")
 
 
 class TestProvider(Provider):
@@ -213,6 +214,7 @@ async def notification_event(
         session.add(
             NotificationModel(
                 source_event_id=source_event_id,
+                user_id=OWNER_USER_ID,
                 wallet_id=uuid.uuid4(),
                 operation_type=WalletOperationType.DEPOSIT,
                 amount_cent=5000,
