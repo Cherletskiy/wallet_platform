@@ -24,6 +24,9 @@ from bff_service.application.queries.get_wallet_balance.interactor import (
 from bff_service.application.queries.list_notifications.interactor import (
     ListNotificationsInteractor,
 )
+from bff_service.application.queries.list_wallets.interactor import (
+    ListWalletsInteractor,
+)
 from bff_service.config import config
 from bff_service.infrastructure.http.gateway import DownstreamGateway, ProxyResponse
 
@@ -59,6 +62,29 @@ class StubGateway(DownstreamGateway):
             "headers": headers,
         }
         return ProxyResponse(status_code=200, body={"balance_rub": 100.0}, headers={})
+
+    async def list_wallets(
+        self,
+        *,
+        headers: dict[str, str],
+    ) -> ProxyResponse:
+        self.last_call = {
+            "headers": headers,
+        }
+        return ProxyResponse(
+            status_code=200,
+            body=[
+                {
+                    "wallet_id": "11111111-1111-1111-1111-111111111111",
+                    "balance_rub": 100.0,
+                },
+                {
+                    "wallet_id": "22222222-2222-2222-2222-222222222222",
+                    "balance_rub": 25.0,
+                },
+            ],
+            headers={},
+        )
 
     async def create_wallet(
         self,
@@ -99,8 +125,7 @@ class StubGateway(DownstreamGateway):
                     "amount_rub": 100.0,
                     "balance_rub": 100.0,
                     "message": (
-                        "Deposit received: 100.00 RUB. "
-                        "Current balance: 100.00 RUB."
+                        "Deposit received: 100.00 RUB. Current balance: 100.00 RUB."
                     ),
                     "created_at": None,
                 }
@@ -151,6 +176,10 @@ async def app(
         create_wallet_interactor = provide(CreateWalletInteractor, scope=Scope.REQUEST)
         get_wallet_balance_interactor = provide(
             GetWalletBalanceInteractor,
+            scope=Scope.REQUEST,
+        )
+        list_wallets_interactor = provide(
+            ListWalletsInteractor,
             scope=Scope.REQUEST,
         )
         list_notifications_interactor = provide(

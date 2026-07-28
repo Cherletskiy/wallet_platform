@@ -14,6 +14,9 @@ from bff_service.application.queries.get_wallet_balance.interactor import (
 from bff_service.application.queries.list_notifications.interactor import (
     ListNotificationsInteractor,
 )
+from bff_service.application.queries.list_wallets.interactor import (
+    ListWalletsInteractor,
+)
 from bff_service.config import config
 from bff_service.infrastructure.http.gateway import DownstreamGateway
 
@@ -30,6 +33,10 @@ class MainProvider(Provider):
     proxy_auth_interactor = provide(ProxyAuthInteractor, scope=Scope.REQUEST)
     get_wallet_balance_interactor = provide(
         GetWalletBalanceInteractor,
+        scope=Scope.REQUEST,
+    )
+    list_wallets_interactor = provide(
+        ListWalletsInteractor,
         scope=Scope.REQUEST,
     )
     apply_wallet_operation_interactor = provide(
