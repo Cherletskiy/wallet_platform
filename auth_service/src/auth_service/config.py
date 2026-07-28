@@ -5,6 +5,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+DEFAULT_JWT_SECRET_KEY = "super-secret-key-change-me-32-bytes"
+
 
 @dataclass(slots=True)
 class Config:
@@ -33,7 +35,7 @@ class Config:
             db_name=os.getenv("POSTGRES_DB", "auth_db"),
             db_user=os.getenv("POSTGRES_USER", "postgres"),
             db_password=os.getenv("POSTGRES_PASSWORD", "postgres"),
-            jwt_secret_key=os.getenv("JWT_SECRET_KEY", "super-secret-key-change-me"),
+            jwt_secret_key=os.getenv("JWT_SECRET_KEY", DEFAULT_JWT_SECRET_KEY),
             access_token_expire_minutes=int(
                 os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "15")
             ),
