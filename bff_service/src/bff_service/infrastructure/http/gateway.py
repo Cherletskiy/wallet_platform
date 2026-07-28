@@ -60,6 +60,20 @@ class DownstreamGateway:
             )
         return self._build_proxy_response(response)
 
+    async def get_notifications(
+        self,
+        *,
+        headers: dict[str, str],
+        limit: int,
+    ) -> ProxyResponse:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            response = await client.get(
+                f"{self._cfg.notification_service_url}/api/v1/notifications",
+                headers=headers,
+                params={"limit": limit},
+            )
+        return self._build_proxy_response(response)
+
     async def apply_wallet_operation(
         self,
         *,

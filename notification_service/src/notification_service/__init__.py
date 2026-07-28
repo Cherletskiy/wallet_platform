@@ -20,6 +20,9 @@ from notification_service.infrastructure.sa.session import (
 )
 from notification_service.ioc import MainProvider
 from notification_service.presentation.api import routers
+from notification_service.presentation.api.exception_handlers import (
+    setup_exception_handlers,
+)
 from notification_service.presentation.faststream.consumer import (
     register_wallet_transaction_consumer,
 )
@@ -69,6 +72,7 @@ def create_app(
 
     for router in routers:
         app.include_router(router)
+    setup_exception_handlers(app)
 
     if container is not None and setup_di:
         setup_dishka(container=container, app=app)

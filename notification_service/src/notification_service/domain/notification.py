@@ -12,6 +12,7 @@ class WalletOperationType(enum.StrEnum):
 @dataclass(slots=True)
 class Notification:
     source_event_id: uuid.UUID
+    user_id: uuid.UUID
     wallet_id: uuid.UUID
     operation_type: WalletOperationType
     amount_cent: int

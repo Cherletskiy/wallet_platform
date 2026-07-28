@@ -8,3 +8,7 @@ class InvalidNotificationAmountError(NotificationError):
 
 class NotificationProcessingError(NotificationError):
     pass
+
+
+class AuthorizationError(NotificationError):
+    pass

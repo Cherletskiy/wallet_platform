@@ -35,6 +35,7 @@ async def test_get_by_source_event_id_not_found(test_db):
 
 async def test_add_notification_success(test_db):
     source_event_id = uuid.uuid4()
+    user_id = uuid.uuid4()
     wallet_id = uuid.uuid4()
 
     async with test_db() as session:
@@ -44,6 +45,7 @@ async def test_add_notification_success(test_db):
         await repository.add(
             Notification(
                 source_event_id=source_event_id,
+                user_id=user_id,
                 wallet_id=wallet_id,
                 operation_type=WalletOperationType.DEPOSIT,
                 amount_cent=5000,
@@ -56,6 +58,7 @@ async def test_add_notification_success(test_db):
         stored = await repository.get_by_source_event_id(source_event_id)
 
         assert stored is not None
+        assert stored.user_id == user_id
         assert stored.wallet_id == wallet_id
 
 
@@ -65,7 +68,10 @@ async def test_list_recent_returns_notifications(test_db, notification_event):
             session
         )
 
-        notifications = await repository.list_recent(limit=10)
+        notifications = await repository.list_recent(
+            user_id=uuid.UUID("11111111-1111-1111-1111-111111111111"),
+            limit=10,
+        )
 
         assert len(notifications) == 1
         assert notifications[0].source_event_id == notification_event
