@@ -5,6 +5,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+DEFAULT_JWT_SECRET_KEY = "super-secret-key-change-me-32-bytes"
+
 
 @dataclass(slots=True)
 class Config:
@@ -25,7 +27,7 @@ class Config:
                 "WALLET_SERVICE_URL",
                 "http://localhost:8000",
             ),
-            jwt_secret_key=os.getenv("JWT_SECRET_KEY", "super-secret-key-change-me"),
+            jwt_secret_key=os.getenv("JWT_SECRET_KEY", DEFAULT_JWT_SECRET_KEY),
         )
 
 

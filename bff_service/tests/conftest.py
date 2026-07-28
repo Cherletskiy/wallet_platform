@@ -107,10 +107,12 @@ class StubGateway(DownstreamGateway):
         self,
         *,
         headers: dict[str, str],
+        wallet_id: uuid.UUID | None,
         limit: int,
     ) -> ProxyResponse:
         self.last_call = {
             "headers": headers,
+            "wallet_id": wallet_id,
             "limit": limit,
         }
         return ProxyResponse(

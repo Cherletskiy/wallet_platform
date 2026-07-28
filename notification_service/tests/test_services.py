@@ -138,11 +138,13 @@ async def test_list_notifications_returns_gateway_result(
 
     result = await list_notifications_interactor.execute(
         uuid.UUID("11111111-1111-1111-1111-111111111111"),
+        None,
         limit=10,
     )
 
     assert result == [notification]
     mock_notification_repository.list_recent.assert_awaited_once_with(
         user_id=uuid.UUID("11111111-1111-1111-1111-111111111111"),
+        wallet_id=None,
         limit=10,
     )
